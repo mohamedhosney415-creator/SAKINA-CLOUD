@@ -17,8 +17,10 @@ class CloudService {
     );
   }
 
-  static Future<AuthResponse> signUp(String email, String password) =>
-      client.auth.signUp(email: email, password: password);
+  static Future<AuthResponse> signUp(String email, String password) async {
+    final r = await client.auth.signUp(email: email, password: password);
+    return r;
+  }
 
   static Future<AuthResponse> signIn(String email, String password) =>
       client.auth.signInWithPassword(email: email, password: password);
@@ -26,23 +28,19 @@ class CloudService {
   static Future<void> signOut() => client.auth.signOut();
 
   static Future<void> pushLocalData() async {
-    final current = user;
-    if (current == null) return;
+    final u = user;
+    if (u == null) return;
     await client.from('user_data').upsert({
-      'user_id': current.id,
+      'user_id': u.id,
       'data': Store.exportAll(),
       'updated_at': DateTime.now().toUtc().toIso8601String(),
     });
   }
 
   static Future<bool> pullLocalData() async {
-    final current = user;
-    if (current == null) return false;
-    final row = await client
-        .from('user_data')
-        .select('data')
-        .eq('user_id', current.id)
-        .maybeSingle();
+    final u = user;
+    if (u == null) return false;
+    final row = await client.from('user_data').select('data').eq('user_id', u.id).maybeSingle();
     if (row == null || row['data'] == null) return false;
     final data = Map<String, dynamic>.from(row['data'] as Map);
     await Store.importAll(data);
@@ -50,33 +48,25 @@ class CloudService {
   }
 
   static Future<void> recordLogin() async {
-    final current = user;
-    if (current == null) return;
+    final u = user;
+    if (u == null) return;
     await client.from('profiles').update({
-      'email': current.email,
+      'email': u.email,
       'last_seen_at': DateTime.now().toUtc().toIso8601String(),
-    }).eq('id', current.id);
+    }).eq('id', u.id);
   }
 
   static Future<bool> isOwner() async {
-    final current = user;
-    if (current == null) return false;
-    final row = await client
-        .from('profiles')
-        .select('role')
-        .eq('id', current.id)
-        .maybeSingle();
+    final u = user;
+    if (u == null) return false;
+    final row = await client.from('profiles').select('role').eq('id', u.id).maybeSingle();
     return row?['role'] == 'owner';
   }
 
   static Future<List<Map<String, dynamic>>> adminUsers() async {
-    final rows = await client
-        .from('profiles')
-        .select('*')
-        .order('created_at', ascending: false);
+    final rows = await client.from('profiles').select('*').order('created_at', ascending: false);
     return List<Map<String, dynamic>>.from(rows);
   }
 
-  static String prettyJson(Object value) =>
-      const JsonEncoder.withIndent('  ').convert(value);
+  static String prettyJson(Object value) => const JsonEncoder.withIndent('  ').convert(value);
 }
