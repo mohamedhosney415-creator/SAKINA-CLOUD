@@ -1,0 +1,108 @@
+name: Build SAKINA APK
+
+on:
+  push:
+    branches: [main, master]
+  workflow_dispatch:
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    timeout-minutes: 45
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Verify project files (fails clearly if something is missing)
+        run: python3 tool/verify_project.py
+
+      - uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: '17'
+
+      - uses: subosito/flutter-action@v2
+        with:
+          channel: stable
+          cache: true
+
+      - name: Flutter version
+        run: flutter --version
+
+      - name: Generate Android project
+        run: flutter create --org com.hosny --project-name sakina --platforms=android .
+
+      - name: Remove default test (references MyApp)
+        run: rm -rf test
+
+      - name: Patch Android (manifest, widget, adhan audio, gradle)
+        run: python3 tool/patch_android.py
+
+      - name: Get packages
+        run: flutter pub get
+
+      - name: Analyze (does not stop the build; read this log if the build breaks)
+        run: flutter analyze --no-fatal-infos --no-fatal-warnings || true
+
+      - name: Build release APK
+        run: flutter build apk --release
+
+      - name: Upload APK
+        uses: actions/upload-artifact@v4
+        with:
+          name: SAKINA-apk
+          path: build/app/outputs/flutter-apk/app-release.apk
+
+  # يشغّل التطبيق على محاكي أندرويد ويصوّر الشاشة ويجمع سجل الأعطال.
+  # لو التطبيق يغلق عندك: افتح هذه الخطوة ← حمّل Artifact اسمه smoke-test-output.
+  smoke-test:
+    needs: build
+    runs-on: ubuntu-latest
+    timeout-minutes: 35
+    continue-on-error: true
+    steps:
+      - uses: actions/download-artifact@v4
+        with:
+          name: SAKINA-apk
+          path: apk
+
+      - name: Enable KVM
+        run: |
+          echo 'KERNEL=="kvm", GROUP="kvm", MODE="0666", OPTIONS+="static_node=kvm"' | sudo tee /etc/udev/rules.d/99-kvm4all.rules
+          sudo udevadm control --reload-rules
+          sudo udevadm trigger --name-match=kvm
+
+      - name: Run app on emulator
+        uses: reactivecircus/android-emulator-runner@v2
+        with:
+          api-level: 34
+          arch: x86_64
+          target: google_apis
+          profile: pixel_6
+          disable-animations: true
+          script: |
+            mkdir -p out
+            adb install -r apk/app-release.apk
+            adb logcat -c
+            adb shell monkey -p com.hosny.sakina -c android.intent.category.LAUNCHER 1
+            sleep 30
+            adb logcat -d > out/logcat_full.txt
+            adb exec-out screencap -p > out/screen.png
+            adb shell pidof com.hosny.sakina > out/pid.txt || echo "NOT RUNNING" > out/pid.txt
+            adb shell dumpsys activity activities | grep -i "mResumedActivity" > out/resumed.txt || true
+
+      - name: Crash summary
+        if: always()
+        run: |
+          echo "=== process status ==="; cat out/pid.txt || true
+          echo "=== resumed activity ==="; cat out/resumed.txt || true
+          echo "=== FATAL EXCEPTION / AndroidRuntime ==="
+          grep -n -A30 "FATAL EXCEPTION" out/logcat_full.txt | head -150 || echo "no FATAL EXCEPTION found"
+          echo "=== Flutter errors ==="
+          grep -n "flutter\|E/flutter" out/logcat_full.txt | head -60 || true
+
+      - name: Upload smoke test output
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: smoke-test-output
+          path: out/
