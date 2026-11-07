@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import '../core/diag.dart';
 import '../core/widgets.dart';
+import '../cloud/cloud_service.dart';
 
 /// صفحة التشخيص: تعرض خطوات التشغيل وأي أخطاء، ويمكن نسخها وإرسالها للمطوّر.
 class DiagnosticsPage extends StatelessWidget {
@@ -8,7 +9,19 @@ class DiagnosticsPage extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return Scaffold(
+    return FutureBuilder<bool>(
+      future: CloudService.isOwner(),
+      builder: (context, access) {
+        if (access.connectionState != ConnectionState.done) {
+          return const Scaffold(body: Center(child: CircularProgressIndicator()));
+        }
+        if (access.data != true) {
+          return Scaffold(
+            appBar: AppBar(title: const Text('التشخيص')),
+            body: const Center(child: Text('هذه الصفحة مخصصة لمالك التطبيق فقط.')),
+          );
+        }
+        return Scaffold(
       appBar: AppBar(title: const Text('التشخيص')),
       body: ListenableBuilder(
         listenable: Diag.i,
@@ -53,6 +66,8 @@ class DiagnosticsPage extends StatelessWidget {
           ]);
         },
       ),
+    );
+      },
     );
   }
 }
