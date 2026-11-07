@@ -72,7 +72,7 @@ class _ErrorBox extends StatelessWidget {
         color: const Color(0x33FF9800),
         child: SingleChildScrollView(
           child: Text(
-            'تعذّر عرض هذا الجزء.\n${details.exceptionAsString()}',
+            'تعذّر عرض هذا الجزء. حاول إعادة فتح الصفحة، وإذا تكررت المشكلة تواصل مع الدعم.',
             style: const TextStyle(fontSize: 12, color: Color(0xFF8A3B00)),
           ),
         ),
