@@ -17,13 +17,14 @@ class _OnboardingPageState extends State<OnboardingPage> {
   final _name = TextEditingController(text: Settings.i.userName);
   int step = 0, target = Settings.i.intOf('tasbeehTarget', 33);
   bool busy = false, notifications = Settings.i.notificationsOn, adhan = Settings.i.adhanOn;
-  String muezzin = Settings.i.muezzin;
+  String muezzin = Settings.i.muezzin, fajrMuezzin = Settings.i.fajrMuezzin;
   final titles = const ['أهلًا بك في سكينة','خلّينا نتعرف عليك','حدد مكانك','جهّز الأذان','فعّل التنبيهات','حدد ورد التسبيح','كل شيء جاهز'];
 
   Future<void> next() async {
     if (step == 1) await Settings.i.set('userName', _name.text.trim());
     if (step == 3) {
       await Settings.i.set('muezzin', muezzin);
+      await Settings.i.set('fajrMuezzin', fajrMuezzin);
       await Settings.i.set('notifOn', notifications);
       await Settings.i.set('adhanOn', adhan);
     }
@@ -32,6 +33,7 @@ class _OnboardingPageState extends State<OnboardingPage> {
     setState(() => busy = true);
     await Settings.i.set('userName', _name.text.trim());
     await Settings.i.set('muezzin', muezzin);
+    await Settings.i.set('fajrMuezzin', fajrMuezzin);
     await Settings.i.set('notifOn', notifications);
     await Settings.i.set('adhanOn', adhan);
     await Settings.i.set('tasbeehTarget', target);
@@ -105,8 +107,18 @@ class _OnboardingPageState extends State<OnboardingPage> {
             onChanged: (v) { if (v != null) setState(() => muezzin = v); },
             decoration: const InputDecoration(labelText: 'المؤذن'),
           ),
+          const SizedBox(height: 12),
+          DropdownButtonFormField<String>(
+            value: AdhanAudio.muezzins().where((v) => v.hasFajr).any((v) => v.id == fajrMuezzin)
+                ? fajrMuezzin
+                : AdhanAudio.muezzins().firstWhere((v) => v.hasFajr).id,
+            items: [for (final v in voices.where((v) => v.hasFajr))
+              DropdownMenuItem(value: v.id, child: Text(v.label, overflow: TextOverflow.ellipsis))],
+            onChanged: (v) { if (v != null) setState(() => fajrMuezzin = v); },
+            decoration: const InputDecoration(labelText: 'صوت الفجر الخاص'),
+          ),
           SwitchListTile(title: const Text('تشغيل الأذان عند دخول الوقت'), value: adhan, onChanged: (v) => setState(() => adhan = v)),
-          const Text('يمكن تنزيل الصوت وتحديد صوت خاص للفجر لاحقًا من إعدادات الأذان.', textAlign: TextAlign.center),
+          const Text('اخترنا صوتًا مستقلًا للفجر من الأصوات التي توفر تسجيل فجر منفصلًا.', textAlign: TextAlign.center),
         ]);
       case 4:
         return Column(children: [
