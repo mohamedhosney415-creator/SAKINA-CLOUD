@@ -40,11 +40,6 @@ class _SakinaAppState extends State<SakinaApp> with WidgetsBindingObserver {
         ));
     await Diag.guard('notifications-init', NotificationService.init);
     await Diag.guard('notification-launch', NotificationService.handleAppLaunchDetails);
-    if (!Store.flag('permAsked')) {
-      await Store.setFlag('permAsked', true);
-      await Diag.guard('notification-permission',
-          NotificationService.requestNotificationsOnly);
-    }
     await Diag.guard('schedule', () => NotificationService.ensureScheduled());
   }
 
