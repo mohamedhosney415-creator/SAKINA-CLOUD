@@ -61,6 +61,17 @@ class _OnboardingPageState extends State<OnboardingPage> {
     } catch (_) {}
   }
 
+  Future<void> fullScreenSettings() async {
+    try {
+      await const AndroidIntent(
+        action: 'android.settings.MANAGE_APP_USE_FULL_SCREEN_INTENT',
+        data: 'package:com.hosny.sakina',
+      ).launch();
+    } catch (_) {
+      await batterySettings();
+    }
+  }
+
   Widget content(BuildContext context, int i) {
     final cs = Theme.of(context).colorScheme;
     switch (i) {
@@ -127,7 +138,8 @@ class _OnboardingPageState extends State<OnboardingPage> {
           SwitchListTile(title: const Text('تفعيل الإشعارات'), subtitle: const Text('الأذان والتذكير والورد'), value: notifications, onChanged: (v) => setState(() => notifications = v)),
           FilledButton.icon(onPressed: busy ? null : permissions, icon: const Icon(Icons.verified_user_outlined), label: const Text('طلب أذونات الإشعارات والمنبهات')),
           OutlinedButton.icon(onPressed: batterySettings, icon: const Icon(Icons.battery_saver_outlined), label: const Text('فتح إعدادات التطبيق والبطارية')),
-          const Text('اسمح بالإشعارات والمنبهات الدقيقة، وقلّل قيود البطارية أو فعّل التشغيل التلقائي إن توفر. تختلف الخطوات حسب الهاتف، ولا يمكن للتطبيق العمل بعد إيقافه إجباريًا من إعدادات النظام.', style: TextStyle(height: 1.7)),
+          OutlinedButton.icon(onPressed: fullScreenSettings, icon: const Icon(Icons.fullscreen_rounded), label: const Text('السماح بشاشة الأذان على شاشة القفل')),
+          const Text('اسمح بالإشعارات والمنبهات الدقيقة وشاشة الأذان الكاملة إن كان هاتفك يدعمها، وقلّل قيود البطارية أو فعّل التشغيل التلقائي إن توفر. تختلف الخطوات حسب الهاتف، ولا يمكن للتطبيق العمل بعد إيقافه إجباريًا من إعدادات النظام.', style: TextStyle(height: 1.7)),
         ]);
       case 5:
         return Column(children: [
