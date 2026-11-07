@@ -52,6 +52,7 @@ class Settings extends ChangeNotifier {
   bool get reminderOn => _b('reminderOn', true);
   int get reminderMinutes => _i('reminderMin', 10);
   String get muezzin => _s('muezzin', 'afasy');
+  String get fajrMuezzin => _s('fajrMuezzin', 'abdulbasit');
   double get volume => _d('volume', 1.0);
   bool get vibrate => _b('vibrate', true);
   bool get ramadanAlerts => _b('ramadanAlerts', true);
@@ -87,7 +88,7 @@ class Settings extends ChangeNotifier {
             k.startsWith('adhan_') ||
             const [
               'gov', 'city', 'notifOn', 'adhanOn', 'reminderOn', 'reminderMin',
-              'muezzin', 'vibrate', 'ramadanAlerts', 'eventAlerts',
+              'muezzin', 'fajrMuezzin', 'vibrate', 'ramadanAlerts', 'eventAlerts',
               'hijriOffset', 'khatmaReminder', 'khatmaHour', 'khatmaMinute',
               'dailyMessageOn', 'dailyMessageHour', 'noorNotificationOn',
               'noorNotificationHour', 'streakReminderOn', 'streakReminderHour'
