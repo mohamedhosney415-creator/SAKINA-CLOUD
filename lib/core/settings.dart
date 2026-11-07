@@ -88,7 +88,9 @@ class Settings extends ChangeNotifier {
             const [
               'gov', 'city', 'notifOn', 'adhanOn', 'reminderOn', 'reminderMin',
               'muezzin', 'vibrate', 'ramadanAlerts', 'eventAlerts',
-              'hijriOffset', 'khatmaReminder', 'khatmaHour', 'khatmaMinute',\n              'dailyMessageOn', 'dailyMessageHour', 'noorNotificationOn',\n              'noorNotificationHour', 'streakReminderOn', 'streakReminderHour'
+              'hijriOffset', 'khatmaReminder', 'khatmaHour', 'khatmaMinute',
+              'dailyMessageOn', 'dailyMessageHour', 'noorNotificationOn',
+              'noorNotificationHour', 'streakReminderOn', 'streakReminderHour'
             ].contains(k))
         .toList()
       ..sort();
