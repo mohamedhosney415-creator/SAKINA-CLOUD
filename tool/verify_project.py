@@ -8,7 +8,7 @@ import sys
 ROOT = os.getcwd()
 required = [
     'pubspec.yaml',
-    'lib/main.dart', 'lib/app.dart',
+    'lib/main.dart', 'lib/app.dart', 'lib/features/onboarding_page.dart',
     'tool/patch_android.py',
     'android_native/kotlin/SakinaWidgetProvider.kt',
     'android_native/res/layout/sakina_widget.xml',
