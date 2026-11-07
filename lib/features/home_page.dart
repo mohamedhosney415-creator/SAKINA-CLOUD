@@ -70,9 +70,21 @@ class _HomePageState extends State<HomePage> {
           const PermissionBanner(),
           HeroCard(
             child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
-              Text(_greeting(now),
-                  style: const TextStyle(
-                      color: Colors.white, fontSize: 18, fontWeight: FontWeight.w800)),
+              Row(children: [
+                Expanded(
+                  child: Text(_greeting(now),
+                      style: const TextStyle(
+                          color: Colors.white, fontSize: 18, fontWeight: FontWeight.w800)),
+                ),
+                ActionChip(
+                  visualDensity: VisualDensity.compact,
+                  backgroundColor: Colors.white.withAlpha(22),
+                  avatar: const Icon(Icons.local_fire_department_rounded, size: 17, color: gold),
+                  label: Text('${ar(ActivityService.currentStreak)} يوم',
+                      style: const TextStyle(color: Colors.white, fontSize: 12, fontWeight: FontWeight.w800)),
+                  onPressed: () => go(context, const DailyAssistantPage()),
+                ),
+              ]),
               const SizedBox(height: 6),
               Text('${fmtHijri(today)}  •  ${fmtDate(today)}',
                   style: TextStyle(color: Colors.white.withAlpha(215), fontSize: 12.5)),
