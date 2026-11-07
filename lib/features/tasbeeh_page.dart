@@ -254,7 +254,7 @@ class _TasbeehPageState extends State<TasbeehPage> {
               Text(
                 ActivityService.tasbeehGoalReached()
                     ? 'اكتمل هدف اليوم، بارك الله في وقتك 🌿'
-                    : 'متبقي \${ar((target - todayTotal).clamp(0, target))} تسبيحة لإكمال هدفك',
+                    : 'متبقي ${ar((target - todayTotal).clamp(0, target))} تسبيحة لإكمال هدفك',
                 style: TextStyle(color: cs.onSurface.withAlpha(170), fontSize: 12),
               ),
             ] else
