@@ -2,7 +2,7 @@ name: Build SAKINA APK
 
 on:
   push:
-    branches: [main, master]
+    branches: [main, master, sakina-4-ui-streak]
   workflow_dispatch:
 
 jobs:
