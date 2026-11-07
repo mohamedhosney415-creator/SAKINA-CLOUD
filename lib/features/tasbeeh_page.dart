@@ -62,17 +62,15 @@ class _TasbeehPageState extends State<TasbeehPage> {
     while (keys.length > 30) {
       stats.remove(keys.removeAt(0));
     }
+    final todayTotal = t.values.fold<int>(0, (sum, value) => sum + (value as num).toInt());
+    final reachedNow = target > 0 && todayTotal >= target && !ActivityService.tasbeehGoalReached();
     if (Settings.i.haptic) {
-      if (target > 0 && next % target == 0) {
-        HapticFeedback.heavyImpact();
-      } else {
-        HapticFeedback.lightImpact();
-      }
+      if (reachedNow) { HapticFeedback.heavyImpact(); } else { HapticFeedback.lightImpact(); }
     }
     setState(() {});
     await Store.setJson('tasbeeh_cur', cur);
     await Store.setJson('tasbeeh_stats', stats);
-    await ActivityService.mark('tasbeeh');
+    if (reachedNow) await ActivityService.markTasbeehGoalReached();
   }
 
   Future<void> _reset() async {
@@ -124,8 +122,8 @@ class _TasbeehPageState extends State<TasbeehPage> {
     for (final v in today.values) {
       todayTotal += (v as num).toInt();
     }
-    final prog = target > 0 ? (count % target) / target : 0.0;
-    final laps = target > 0 ? count ~/ target : 0;
+    final prog = target > 0 ? (todayTotal / target).clamp(0.0, 1.0) : 0.0;
+    final laps = target > 0 ? todayTotal ~/ target : 0;
 
     return Scaffold(
       appBar: AppBar(title: const Text('المسبحة'), actions: [
@@ -178,7 +176,7 @@ class _TasbeehPageState extends State<TasbeehPage> {
                   width: 240,
                   height: 240,
                   child: CircularProgressIndicator(
-                    value: target > 0 ? (prog == 0 && count > 0 ? 1.0 : prog) : 0,
+                    value: prog,
                     strokeWidth: 10,
                     backgroundColor: cs.primary.withAlpha(30),
                     color: gold,
@@ -199,7 +197,7 @@ class _TasbeehPageState extends State<TasbeehPage> {
                     Text(ar(count),
                         style: const TextStyle(color: Colors.white, fontSize: 58, fontWeight: FontWeight.w900)),
                     if (target > 0)
-                      Text('الهدف ${ar(target)} • الدورات ${ar(laps)}',
+                      Text('إجمالي اليوم ${ar(todayTotal)} • الهدف ${ar(target)} • الدورات ${ar(laps)}',
                           style: TextStyle(color: Colors.white.withAlpha(210), fontSize: 12)),
                   ]),
                 ),
@@ -242,6 +240,25 @@ class _TasbeehPageState extends State<TasbeehPage> {
                     Text(ar((e.value as num).toInt()), style: const TextStyle(fontWeight: FontWeight.w800)),
                   ]),
                 ),
+            if (target > 0) ...[
+              const SizedBox(height: 10),
+              ClipRRect(
+                borderRadius: BorderRadius.circular(20),
+                child: LinearProgressIndicator(
+                  value: prog,
+                  minHeight: 8,
+                  backgroundColor: cs.primary.withAlpha(24),
+                ),
+              ),
+              const SizedBox(height: 6),
+              Text(
+                ActivityService.tasbeehGoalReached()
+                    ? 'اكتمل هدف اليوم، بارك الله في وقتك 🌿'
+                    : 'متبقي \${ar((target - todayTotal).clamp(0, target))} تسبيحة لإكمال هدفك',
+                style: TextStyle(color: cs.onSurface.withAlpha(170), fontSize: 12),
+              ),
+            ] else
+              Text('اختر هدفًا يوميًا لتفعيل الاستريك.', style: TextStyle(color: cs.onSurface.withAlpha(150))),
             const Divider(height: 24),
             Builder(builder: (context) {
               int week = 0;
