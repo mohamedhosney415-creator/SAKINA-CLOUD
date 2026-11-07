@@ -118,26 +118,33 @@ class _ShellState extends State<Shell> {
     return Scaffold(
       body: SafeArea(
         child: Column(children: [
-          ListenableBuilder(
-            listenable: Diag.i,
-            builder: (context, _) {
-              if (Diag.i.errors.isEmpty) return const SizedBox.shrink();
-              return Material(
-                color: const Color(0x33FF9800),
-                child: InkWell(
-                  onTap: () => Navigator.of(context).push(
-                      MaterialPageRoute(builder: (_) => const DiagnosticsPage())),
-                  child: Padding(
-                    padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 8),
-                    child: Row(children: [
-                      const Icon(Icons.warning_amber_rounded, size: 18, color: Colors.orange),
-                      const SizedBox(width: 8),
-                      Expanded(
-                          child: Text('حدثت ${Diag.i.errors.length} أخطاء أثناء التشغيل. اضغط لعرضها',
-                              style: const TextStyle(fontSize: 12.5, fontWeight: FontWeight.w700))),
-                    ]),
-                  ),
-                ),
+          FutureBuilder<bool>(
+            future: CloudService.isOwner(),
+            builder: (context, access) {
+              if (access.data != true) return const SizedBox.shrink();
+              return ListenableBuilder(
+                listenable: Diag.i,
+                builder: (context, _) {
+                  if (Diag.i.errors.isEmpty) return const SizedBox.shrink();
+                  return Material(
+                    color: const Color(0x33FF9800),
+                    child: InkWell(
+                      onTap: () => Navigator.of(context).push(
+                          MaterialPageRoute(builder: (_) => const DiagnosticsPage())),
+                      child: Padding(
+                        padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 8),
+                        child: Row(children: [
+                          const Icon(Icons.warning_amber_rounded, size: 18, color: Colors.orange),
+                          const SizedBox(width: 8),
+                          Expanded(
+                            child: Text('يوجد ${Diag.i.errors.length} تنبيهات تشخيصية (للمالك)',
+                                style: const TextStyle(fontSize: 12.5, fontWeight: FontWeight.w700)),
+                          ),
+                        ]),
+                      ),
+                    ),
+                  );
+                },
               );
             },
           ),
