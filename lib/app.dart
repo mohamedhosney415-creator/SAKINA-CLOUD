@@ -16,6 +16,7 @@ import 'services/notification_service.dart';
 import 'cloud/cloud_service.dart';
 import 'features/auth_page.dart';
 import 'features/account_page.dart';
+import 'features/onboarding_page.dart';
 
 class SakinaApp extends StatefulWidget {
   const SakinaApp({super.key});
@@ -105,9 +106,15 @@ class Shell extends StatefulWidget {
 
 class _ShellState extends State<Shell> {
   int index = 0;
+  bool onboardingDone = Store.flag('onboardingComplete');
 
   @override
   Widget build(BuildContext context) {
+    if (!onboardingDone) {
+      return OnboardingPage(onComplete: () {
+        if (mounted) setState(() => onboardingDone = true);
+      });
+    }
     const pages = <Widget>[
       HomePage(),
       PrayerPage(),
