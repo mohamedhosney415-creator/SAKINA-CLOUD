@@ -10,6 +10,8 @@ import '../core/store.dart';
 import 'events_service.dart';
 import 'prayer_service.dart';
 import 'widget_sync.dart';
+import 'noor_service.dart';
+import 'activity_service.dart';
 import 'package:flutter/material.dart';
 import '../features/adhan_experience_page.dart';
 
@@ -240,6 +242,43 @@ class NotificationService {
         ),
       );
 
+  static NotificationDetails _dailyMessageDetails(String body) => NotificationDetails(
+        android: AndroidNotificationDetails(
+          'sakina_daily_message_v1',
+          'رسالة سكينة اليومية',
+          channelDescription: 'رسائل إيمانية يومية متغيرة',
+          importance: Importance.defaultImportance,
+          priority: Priority.defaultPriority,
+          styleInformation: BigTextStyleInformation(body),
+        ),
+      );
+
+  static NotificationDetails _noorDetails(String body) => NotificationDetails(
+        android: AndroidNotificationDetails(
+          'sakina_noor_daily_v1',
+          'نور يومك',
+          channelDescription: 'حديث أو حكمة اليوم',
+          importance: Importance.high,
+          priority: Priority.high,
+          styleInformation: BigTextStyleInformation(body),
+        ),
+      );
+
+  static NotificationDetails _streakDetails(String body) => NotificationDetails(
+        android: AndroidNotificationDetails(
+          'sakina_streak_v1',
+          'تذكير الاستمرار',
+          channelDescription: 'تذكير لطيف لإكمال هدف التسبيح اليومي',
+          importance: Importance.defaultImportance,
+          priority: Priority.defaultPriority,
+          styleInformation: BigTextStyleInformation(body),
+        ),
+      );
+
+  static Future<void> cancelTodayStreakReminder() async {
+    try { await notificationsPlugin.cancel(4002); } catch (_) {}
+  }
+
   static Future<void> _at(int id, String title, String body,
       tz.TZDateTime when, NotificationDetails d, AndroidScheduleMode mode,
       {DateTimeComponents? repeat, String? payload}) async {
@@ -319,6 +358,45 @@ class NotificationService {
           const body = 'بقي عشر دقائق على الإفطار، فاغتنم وقت الدعاء.';
           await _at(1001 + d * 2, 'اقترب الإفطار', body, iftar,
               _generalDetails(body), mode);
+        }
+      }
+
+      // رسائل يومية مستقلة القنوات والهوية.
+      if (s.dailyMessageOn) {
+        const messages = [
+          'ابدأ يومك بنية طيبة، واجعل لك نصيبًا من الذكر مهما كان وقتك قليلًا.',
+          'خذ دقيقة تهدأ فيها، واستغفر الله، فالقليل الدائم باب خير.',
+          'لا تؤجل وردك؛ آيات قليلة بقلب حاضر خير من انقطاع طويل.',
+          'اجعل الصلاة محطة راحة في يومك، لا مهمة تؤجلها.',
+          'كل يوم فرصة جديدة للقرب من الله، فابدأ بما تستطيع.',
+          'املأ وقتك بذكر لطيف، فالقلب يطمئن بذكر الله.',
+          'خطوة صغيرة اليوم قد تصنع عادة جميلة تدوم.',
+        ];
+        final when = cairoDate(date.year, date.month, date.day, s.dailyMessageHour, 0);
+        if (when.isAfter(now)) {
+          final body = messages[(date.day + date.month) % messages.length];
+          await _at(4000 + d * 3, 'رسالة سكينة لك 🌿', body, when,
+              _dailyMessageDetails(body), mode);
+        }
+      }
+
+      if (s.noorNotificationOn) {
+        final when = cairoDate(date.year, date.month, date.day, s.noorNotificationHour, 0);
+        if (when.isAfter(now)) {
+          final item = NoorService.forDay(date);
+          final body = item.text;
+          await _at(4001 + d * 3, 'نور يومك • ${item.label}', body, when,
+              _noorDetails(body), mode);
+        }
+      }
+
+      if (s.streakReminderOn && s.intOf('tasbeehTarget', 33) > 0 &&
+          !(d == 0 && ActivityService.tasbeehGoalReached())) {
+        final when = cairoDate(date.year, date.month, date.day, s.streakReminderHour, 0);
+        if (when.isAfter(now)) {
+          const body = 'لسه عندك وقت تكمل هدف التسبيح اليومي. خُد دقيقة لذكرك، وربنا يتقبل منك.';
+          await _at(4002 + d * 3, 'حافظ على استمراك 🌱', body, when,
+              _streakDetails(body), mode);
         }
       }
     }
