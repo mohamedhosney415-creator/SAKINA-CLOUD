@@ -56,6 +56,12 @@ class Settings extends ChangeNotifier {
   bool get vibrate => _b('vibrate', true);
   bool get ramadanAlerts => _b('ramadanAlerts', true);
   bool get eventAlerts => _b('eventAlerts', true);
+  bool get dailyMessageOn => _b('dailyMessageOn', true);
+  int get dailyMessageHour => _i('dailyMessageHour', 9);
+  bool get noorNotificationOn => _b('noorNotificationOn', true);
+  int get noorNotificationHour => _i('noorNotificationHour', 8);
+  bool get streakReminderOn => _b('streakReminderOn', true);
+  int get streakReminderHour => _i('streakReminderHour', 20);
 
   // ---------- القرآن ----------
   String get reciter => _s('reciter', 'afasy');
@@ -82,7 +88,7 @@ class Settings extends ChangeNotifier {
             const [
               'gov', 'city', 'notifOn', 'adhanOn', 'reminderOn', 'reminderMin',
               'muezzin', 'vibrate', 'ramadanAlerts', 'eventAlerts',
-              'hijriOffset', 'khatmaReminder', 'khatmaHour', 'khatmaMinute'
+              'hijriOffset', 'khatmaReminder', 'khatmaHour', 'khatmaMinute',\n              'dailyMessageOn', 'dailyMessageHour', 'noorNotificationOn',\n              'noorNotificationHour', 'streakReminderOn', 'streakReminderHour'
             ].contains(k))
         .toList()
       ..sort();
