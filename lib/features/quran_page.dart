@@ -146,6 +146,41 @@ class _QuranPageState extends State<QuranPage> {
     if (mounted) setState(() => downloaded = f.map((e) => e.surah).toSet());
   }
 
+  Future<void> _chooseReciter() async {
+    await showModalBottomSheet<void>(
+      context: context,
+      showDragHandle: true,
+      builder: (sheetContext) => SafeArea(
+        child: ListView(
+          shrinkWrap: true,
+          children: [
+            const Padding(
+              padding: EdgeInsets.fromLTRB(20, 8, 20, 12),
+              child: Text('اختيار القارئ', style: TextStyle(fontSize: 18, fontWeight: FontWeight.w900)),
+            ),
+            for (final reciter in reciters)
+              ListTile(
+                leading: Icon(
+                  Settings.i.reciter == reciter.id ? Icons.radio_button_checked : Icons.radio_button_off,
+                  color: Theme.of(sheetContext).colorScheme.primary,
+                ),
+                title: Text(reciter.name),
+                trailing: Settings.i.reciter == reciter.id ? const Icon(Icons.check_rounded) : null,
+                onTap: () async {
+                  Navigator.pop(sheetContext);
+                  if (Settings.i.reciter == reciter.id) return;
+                  await AudioCtl.i.stop();
+                  await Settings.i.set('reciter', reciter.id);
+                  if (mounted) setState(() {});
+                  if (mounted) toast(context, 'تم اختيار ${reciter.name}');
+                },
+              ),
+          ],
+        ),
+      ),
+    );
+  }
+
   Future<void> _open(int n, {int? ayah}) async {
     await Navigator.of(context)
         .push(MaterialPageRoute(builder: (_) => SurahReaderPage(number: n, ayah: ayah)));
@@ -187,6 +222,17 @@ class _QuranPageState extends State<QuranPage> {
                 },
                 icon: const Icon(Icons.download_for_offline_outlined)),
           ]),
+        ),
+        Padding(
+          padding: const EdgeInsets.fromLTRB(16, 2, 16, 8),
+          child: Align(
+            alignment: AlignmentDirectional.centerStart,
+            child: ActionChip(
+              avatar: const Icon(Icons.record_voice_over_rounded, size: 18),
+              label: Text('القارئ: ${reciterById(Settings.i.reciter).name}'),
+              onPressed: _chooseReciter,
+            ),
+          ),
         ),
         Padding(
           padding: const EdgeInsets.fromLTRB(16, 4, 16, 8),
