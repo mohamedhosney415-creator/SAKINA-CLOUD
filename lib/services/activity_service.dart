@@ -39,6 +39,25 @@ class ActivityService {
   static bool completed(String task, [String? key]) =>
       forDay(key)[task] == true;
 
+  /// يُسجَّل يوم الاستمرار فقط بعد بلوغ إجمالي هدف التسبيح اليومي.
+  static Future<void> markTasbeehGoalReached() async {
+    final all = _all();
+    final day = all[todayKey] is Map
+        ? Map<String, dynamic>.from(all[todayKey])
+        : <String, dynamic>{};
+    if (day['tasbeehGoal'] == true) return;
+    day['tasbeehGoal'] = true;
+    all[todayKey] = day;
+    final keys = all.keys.toList()..sort();
+    while (keys.length > 400) {
+      all.remove(keys.removeAt(0));
+    }
+    await Store.setJson('activity_days', all);
+  }
+
+  static bool tasbeehGoalReached([String? key]) =>
+      forDay(key)['tasbeehGoal'] == true;
+
   static int get currentStreak {
     final all = _all();
     var cursor = DateTime.now();
@@ -47,12 +66,12 @@ class ActivityService {
     for (var i = 0; i < 400; i++) {
       final key = dayKey(cursor);
       final value = all[key];
-      final hasAny = value is Map && value.values.any((v) => v == true);
+      final hasAny = value is Map && value['tasbeehGoal'] == true;
       if (!hasAny) {
         if (i == 0) {
           cursor = cursor.subtract(const Duration(days: 1));
           final yesterday = all[dayKey(cursor)];
-          if (yesterday is Map && yesterday.values.any((v) => v == true)) {
+          if (yesterday is Map && yesterday['tasbeehGoal'] == true) {
             count++;
             cursor = cursor.subtract(const Duration(days: 1));
             continue;
