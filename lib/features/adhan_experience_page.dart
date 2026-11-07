@@ -1,6 +1,7 @@
 import 'dart:async';
 import 'package:flutter/material.dart';
 import '../core/format.dart';
+import '../core/settings.dart';
 import '../core/theme.dart';
 import '../core/widgets.dart';
 import '../services/audio_controller.dart';
@@ -36,7 +37,13 @@ class _AdhanExperiencePageState extends State<AdhanExperiencePage> with SingleTi
   }
 
   Future<void> _start() async {
-    final selected = await AdhanAudio.selected();
+    Muezzin? selected;
+    if (prayer == Prayer.fajr) {
+      for (final voice in AdhanAudio.muezzins()) {
+        if (voice.id == Settings.i.fajrMuezzin) selected = voice;
+      }
+    }
+    selected ??= await AdhanAudio.selected();
     if (!mounted) return;
     if (selected != null) {
       muezzinName = selected.label;
