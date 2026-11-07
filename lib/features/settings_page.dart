@@ -63,7 +63,16 @@ class SettingsPage extends StatelessWidget {
           final s = Settings.i;
           Future<void> sw(String k, bool v) async {
             await s.set(k, v);
-            await NotificationService.ensureScheduled();
+            await NotificationService.ensureScheduled(force: true);
+          }
+          Future<void> pickHour(String key, int hour) async {
+            final picked = await showTimePicker(
+              context: context,
+              initialTime: TimeOfDay(hour: hour, minute: 0),
+            );
+            if (picked == null) return;
+            await s.set(key, picked.hour);
+            await NotificationService.ensureScheduled(force: true);
           }
 
           return ListView(children: [
@@ -101,6 +110,46 @@ class SettingsPage extends StatelessWidget {
               title: const Text('تنبيهات المناسبات الإسلامية'),
               value: s.eventAlerts,
               onChanged: (v) => sw('eventAlerts', v),
+            ),
+            const SectionTitle('الإشعارات اليومية'),
+            SwitchListTile(
+              secondary: const Icon(Icons.wb_sunny_outlined),
+              title: const Text('رسالة سكينة اليومية'),
+              subtitle: const Text('رسالة إيمانية متغيرة كل يوم'),
+              value: s.dailyMessageOn,
+              onChanged: (v) => sw('dailyMessageOn', v),
+            ),
+            ListTile(
+              leading: const Icon(Icons.schedule),
+              title: const Text('موعد الرسالة اليومية'),
+              subtitle: Text('${s.dailyMessageHour.toString().padLeft(2, '0')}:00'),
+              onTap: () => pickHour('dailyMessageHour', s.dailyMessageHour),
+            ),
+            SwitchListTile(
+              secondary: const Icon(Icons.auto_awesome),
+              title: const Text('إشعار نور يومك'),
+              subtitle: const Text('حديث أو حكمة اليوم'),
+              value: s.noorNotificationOn,
+              onChanged: (v) => sw('noorNotificationOn', v),
+            ),
+            ListTile(
+              leading: const Icon(Icons.light_mode_outlined),
+              title: const Text('موعد نور يومك'),
+              subtitle: Text('${s.noorNotificationHour.toString().padLeft(2, '0')}:00'),
+              onTap: () => pickHour('noorNotificationHour', s.noorNotificationHour),
+            ),
+            SwitchListTile(
+              secondary: const Icon(Icons.local_fire_department_outlined),
+              title: const Text('تذكير إكمال الاستريك'),
+              subtitle: const Text('يتوقف تلقائيًا بعد إكمال هدف التسبيح'),
+              value: s.streakReminderOn,
+              onChanged: (v) => sw('streakReminderOn', v),
+            ),
+            ListTile(
+              leading: const Icon(Icons.nights_stay_outlined),
+              title: const Text('موعد تذكير الاستريك'),
+              subtitle: Text('${s.streakReminderHour.toString().padLeft(2, '0')}:00'),
+              onTap: () => pickHour('streakReminderHour', s.streakReminderHour),
             ),
             const SectionTitle('المظهر'),
             ListTile(
