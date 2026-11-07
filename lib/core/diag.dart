@@ -24,25 +24,25 @@ class Diag extends ChangeNotifier {
 
   static String _sanitize(String value) {
     var safe = value.replaceAll(
-      RegExp(r'(authorization|access[_-]?token|refresh[_-]?token|password|secret|api[_-]?key)(\\s*[:=]\\s*)([^\\s,;]+)', caseSensitive: false),
+      RegExp(r'(authorization|access[_-]?token|refresh[_-]?token|password|secret|api[_-]?key)(\s*[:=]\s*)([^\s,;]+)', caseSensitive: false),
       r'$1$2[REDACTED]',
     );
     safe = safe.replaceAll(
-      RegExp(r'eyJ[a-zA-Z0-9_-]{10,}\\.[a-zA-Z0-9_-]{10,}\\.[a-zA-Z0-9_-]+'),
+      RegExp(r'eyJ[a-zA-Z0-9_-]{10,}\.[a-zA-Z0-9_-]{10,}\.[a-zA-Z0-9_-]+'),
       '[REDACTED_TOKEN]',
     );
     safe = safe.replaceAll(
-      RegExp(r'[A-Z0-9._%+-]+@[A-Z0-9.-]+\\.[A-Z]{2,}', caseSensitive: false),
+      RegExp(r'[A-Z0-9._%+-]+@[A-Z0-9.-]+\.[A-Z]{2,}', caseSensitive: false),
       '[EMAIL]',
     );
     return safe;
   }
 
   void error(String tag, Object e, [StackTrace? st]) {
-    final trace = (st?.toString() ?? '').split('\\n').take(8).join('\\n');
+    final trace = (st?.toString() ?? '').split('\n').take(8).join('\n');
     final safeError = _sanitize(e.toString());
     final safeTrace = _sanitize(trace);
-    errors.add('[${_t()}] $tag\\n$safeError${safeTrace.isEmpty ? '' : '\\n$safeTrace'}');
+    errors.add('[${_t()}] $tag\n$safeError${safeTrace.isEmpty ? '' : '\n$safeTrace'}');
     if (errors.length > 60) errors.removeAt(0);
     _notify();
   }
