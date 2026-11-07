@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import '../core/settings.dart';
+import '../cloud/cloud_service.dart';
 import '../core/widgets.dart';
 import '../services/notification_service.dart';
 import '../services/quran_service.dart';
@@ -164,10 +165,15 @@ class SettingsPage extends StatelessWidget {
               title: const Text('الخصوصية'),
               onTap: () => _privacy(context),
             ),
-            ListTile(
-              leading: const Icon(Icons.bug_report_outlined),
-              title: const Text('التشخيص (للإبلاغ عن مشكلة)'),
-              onTap: () => go(context, const DiagnosticsPage()),
+            FutureBuilder<bool>(
+              future: CloudService.isOwner(),
+              builder: (context, access) => access.data == true
+                  ? ListTile(
+                      leading: const Icon(Icons.bug_report_outlined),
+                      title: const Text('تشخيص التطبيق (للمالك)'),
+                      onTap: () => go(context, const DiagnosticsPage()),
+                    )
+                  : const SizedBox.shrink(),
             ),
             ListTile(
               leading: const Icon(Icons.info_outline),
