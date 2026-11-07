@@ -6,6 +6,7 @@ import '../core/store.dart';
 import '../core/theme.dart';
 import '../core/widgets.dart';
 import '../services/activity_service.dart';
+import '../services/notification_service.dart';
 
 const _presets = <String>[
   'سُبْحَانَ اللَّهِ',
@@ -70,7 +71,10 @@ class _TasbeehPageState extends State<TasbeehPage> {
     setState(() {});
     await Store.setJson('tasbeeh_cur', cur);
     await Store.setJson('tasbeeh_stats', stats);
-    if (reachedNow) await ActivityService.markTasbeehGoalReached();
+    if (reachedNow) {
+      await ActivityService.markTasbeehGoalReached();
+      await NotificationService.cancelTodayStreakReminder();
+    }
   }
 
   Future<void> _reset() async {
