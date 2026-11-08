@@ -31,14 +31,17 @@ jobs:
       - name: Generate Android project
         run: flutter create --org com.hosny --project-name sakina --platforms=android .
 
-      - name: Remove default test (references MyApp)
-        run: rm -rf test
+      - name: Remove generated starter test only
+        run: rm -f test/widget_test.dart
 
       - name: Patch Android (manifest, widget, adhan audio, gradle)
         run: python3 tool/patch_android.py
 
       - name: Get packages
         run: flutter pub get
+
+      - name: Run regression tests
+        run: flutter test
 
       - name: Analyze Dart code
         run: flutter analyze --no-fatal-infos --no-fatal-warnings
