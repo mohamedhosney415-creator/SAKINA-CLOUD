@@ -1,0 +1,214 @@
+import 'package:flutter/material.dart';
+import 'package:flutter_localizations/flutter_localizations.dart';
+import 'package:just_audio_background/just_audio_background.dart';
+import 'package:supabase_flutter/supabase_flutter.dart';
+import 'core/diag.dart';
+import 'core/settings.dart';
+import 'core/store.dart';
+import 'core/theme.dart';
+import 'core/widgets.dart';
+import 'features/azkar_page.dart';
+import 'features/diagnostics_page.dart';
+import 'features/home_page.dart';
+import 'features/more_page.dart';
+import 'features/prayer_page.dart';
+import 'features/quran_page.dart';
+import 'services/notification_service.dart';
+import 'services/backup_service.dart';
+import 'cloud/cloud_service.dart';
+import 'features/auth_page.dart';
+import 'features/onboarding_page.dart';
+
+class SakinaApp extends StatefulWidget {
+  const SakinaApp({super.key});
+  @override
+  State<SakinaApp> createState() => _SakinaAppState();
+}
+
+class _SakinaAppState extends State<SakinaApp> with WidgetsBindingObserver {
+  @override
+  void initState() {
+    super.initState();
+    WidgetsBinding.instance.addObserver(this);
+    WidgetsBinding.instance.addPostFrameCallback((_) => _startup());
+  }
+
+  Future<void> _startup() async {
+    await Diag.guard('automatic-backup', BackupService.ensureDailyAutoBackup);
+    await Diag.guard(
+        'audio-background',
+        () => JustAudioBackground.init(
+              androidNotificationChannelId: 'com.hosny.sakina.audio',
+              androidNotificationChannelName: 'تشغيل القرآن',
+              androidNotificationOngoing: true,
+            ));
+    await Diag.guard('notifications-init', NotificationService.init);
+    await Diag.guard('notification-permissions', () async {
+      await NotificationService.requestPermissions();
+      await NotificationService.requestNotificationsOnly();
+    });
+    await Diag.guard(
+        'notification-launch', NotificationService.handleAppLaunchDetails);
+    await Diag.guard('schedule', () => NotificationService.ensureScheduled());
+    await Diag.guard(
+        'adhan-auto-download', AdhanAudio.ensureSelectedDownloaded);
+  }
+
+  @override
+  void didChangeAppLifecycleState(AppLifecycleState state) {
+    if (state == AppLifecycleState.resumed) {
+      Diag.guard(
+          'resume-schedule', () => NotificationService.ensureScheduled());
+    }
+  }
+
+  @override
+  void dispose() {
+    WidgetsBinding.instance.removeObserver(this);
+    super.dispose();
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    return ListenableBuilder(
+      listenable: Settings.i,
+      builder: (context, _) {
+        final s = Settings.i;
+        return MaterialApp(
+          navigatorKey: sakinaNavigatorKey,
+          title: 'سكينة',
+          debugShowCheckedModeBanner: false,
+          locale: Locale(s.language, s.language == 'ar' ? 'EG' : 'US'),
+          supportedLocales: const [
+            Locale('ar', 'EG'),
+            Locale('ar'),
+            Locale('en', 'US'),
+            Locale('en'),
+          ],
+          localizationsDelegates: const [
+            GlobalMaterialLocalizations.delegate,
+            GlobalWidgetsLocalizations.delegate,
+            GlobalCupertinoLocalizations.delegate,
+          ],
+          themeMode: const [
+            ThemeMode.system,
+            ThemeMode.light,
+            ThemeMode.dark
+          ][s.themeMode.clamp(0, 2)],
+          theme: buildTheme(Brightness.light, s.accent, s.font),
+          darkTheme: buildTheme(Brightness.dark, s.accent, s.font),
+          builder: (context, child) => Directionality(
+            textDirection:
+                s.isEnglish ? TextDirection.ltr : TextDirection.rtl,
+            child: MediaQuery(
+              data: MediaQuery.of(context)
+                  .copyWith(textScaler: TextScaler.linear(s.fontScale)),
+              child: child ?? const SizedBox.shrink(),
+            ),
+          ),
+          home: CloudService.enabled ? const CloudGate() : const Shell(),
+        );
+      },
+    );
+  }
+}
+
+class Shell extends StatefulWidget {
+  const Shell({super.key});
+  @override
+  State<Shell> createState() => _ShellState();
+}
+
+class _ShellState extends State<Shell> {
+  int index = 0;
+  bool onboardingDone = Store.flag('onboardingComplete');
+
+  @override
+  Widget build(BuildContext context) {
+    final s = Settings.i;
+    if (!onboardingDone) {
+      return OnboardingPage(onComplete: () {
+        if (mounted) setState(() => onboardingDone = true);
+      });
+    }
+    const pages = <Widget>[
+      HomePage(),
+      PrayerPage(),
+      QuranPage(),
+      AzkarPage(),
+      MorePage(),
+    ];
+    return Scaffold(
+      body: SafeArea(
+        child: Column(children: [
+          FutureBuilder<bool>(
+            future: CloudService.isOwner(),
+            builder: (context, access) {
+              if (access.data != true) return const SizedBox.shrink();
+              return ListenableBuilder(
+                listenable: Diag.i,
+                builder: (context, _) {
+                  if (Diag.i.errors.isEmpty) return const SizedBox.shrink();
+                  return Material(
+                    color: const Color(0x33FF9800),
+                    child: InkWell(
+                      onTap: () => Navigator.of(context).push(MaterialPageRoute(
+                          builder: (_) => const DiagnosticsPage())),
+                      child: Padding(
+                        padding: const EdgeInsets.symmetric(
+                            horizontal: 14, vertical: 8),
+                        child: Row(children: [
+                          const Icon(Icons.warning_amber_rounded,
+                              size: 18, color: Colors.orange),
+                          const SizedBox(width: 8),
+                          Expanded(
+                            child: Text(
+                                'يوجد ${Diag.i.errors.length} تنبيهات تشخيصية (للمالك)',
+                                style: const TextStyle(
+                                    fontSize: 12.5,
+                                    fontWeight: FontWeight.w700)),
+                          ),
+                        ]),
+                      ),
+                    ),
+                  );
+                },
+              );
+            },
+          ),
+          Expanded(child: IndexedStack(index: index, children: pages)),
+        ]),
+      ),
+      bottomNavigationBar: SakinaNavBar(
+        index: index,
+        onTap: (i) => setState(() => index = i),
+        items: [
+          SakinaNavItem(s.isEnglish ? 'Home' : 'الرئيسية', Icons.home_outlined,
+              Icons.home_rounded),
+          SakinaNavItem(s.isEnglish ? 'Prayer' : 'الصلاة',
+              Icons.access_time_rounded, Icons.access_time_filled_rounded),
+          SakinaNavItem(s.isEnglish ? 'Quran' : 'القرآن',
+              Icons.menu_book_outlined, Icons.menu_book_rounded),
+          SakinaNavItem(s.isEnglish ? 'Adhkar' : 'الأذكار',
+              Icons.auto_awesome_outlined, Icons.auto_awesome_rounded),
+          SakinaNavItem(s.isEnglish ? 'Tools' : 'المزيد',
+              Icons.grid_view_outlined, Icons.grid_view_rounded),
+        ],
+      ),
+    );
+  }
+}
+
+class CloudGate extends StatelessWidget {
+  const CloudGate({super.key});
+  @override
+  Widget build(BuildContext context) {
+    return StreamBuilder<AuthState>(
+      stream: CloudService.client.auth.onAuthStateChange,
+      builder: (context, snap) {
+        if (CloudService.user != null) return const Shell();
+        return const AuthPage();
+      },
+    );
+  }
+}
