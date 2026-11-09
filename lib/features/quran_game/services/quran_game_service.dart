@@ -209,8 +209,8 @@ class QuranGameService {
         .where((q) => !q.isIslamicKnowledge && q.level == safeLevel)
         .toList();
     final knowledgePool = [
-      ...base.where((q) => q.isIslamicKnowledge),
       ...islamicKnowledgeBank,
+      ...base.where((q) => q.isIslamicKnowledge),
     ]
         .where((q) => q.isIslamicKnowledge)
         .fold<Map<String, QuranGameQuestion>>(
