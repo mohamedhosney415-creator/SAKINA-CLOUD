@@ -1006,6 +1006,7 @@ class QuranGameQuizPage extends StatefulWidget {
 
 class _QuranGameQuizPageState extends State<QuranGameQuizPage> {
   late QuranGameQuestion q;
+  bool showLevelResults = false;
   String? verseContext;
   String? selected;
   bool? correct;
@@ -1016,8 +1017,13 @@ class _QuranGameQuizPageState extends State<QuranGameQuizPage> {
   @override
   void initState() {
     super.initState();
-    q = QuranGameService.nextQuestion(requestedLevel: QuranGameService.level);
-    _loadVerseContext();
+    if (!widget.daily && QuranGameService.levelCompleted) {
+      showLevelResults = true;
+      q = QuranGameService.questions.first;
+    } else {
+      q = QuranGameService.nextQuestion(requestedLevel: QuranGameService.level);
+      _loadVerseContext();
+    }
   }
 
   Future<void> _loadVerseContext() async {
@@ -1144,6 +1150,7 @@ class _QuranGameQuizPageState extends State<QuranGameQuizPage> {
       _message('وصلت إلى نهاية الأسئلة المتاحة حاليًا.');
       return;
     }
+    setState(() => showLevelResults = false);
     next();
   }
 
@@ -1182,6 +1189,12 @@ class _QuranGameQuizPageState extends State<QuranGameQuizPage> {
 
   @override
   Widget build(BuildContext context) {
+    if (showLevelResults) {
+      return Scaffold(
+        appBar: AppBar(title: Text('نتيجة المستوى ${QuranGameService.level}')),
+        body: Center(child: SingleChildScrollView(child: Padding(padding: const EdgeInsets.all(16), child: _levelResultCard()))),
+      );
+    }
     final answered = selected != null;
     final count = widget.daily
         ? (QuranGameService.dailyDone ? 1 : 0)
