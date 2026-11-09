@@ -102,11 +102,40 @@ class GameCloudService {
     if (!enabled) return const [];
     final rows = await client
         .from('game_questions')
-        .select('id,surah_number,surah_name,ayah_number,full_ayah,hidden_word,options,correct_option,difficulty,level,recitation_audio,global_ayah_number,explanation')
+        .select('id,surah_number,surah_name,ayah_number,full_ayah,hidden_word,options,correct_option,difficulty,level,recitation_audio,global_ayah_number,explanation,question_type,question_text,context_text,source_name,source_reference')
         .eq('active', true)
         .order('level')
         .order('id');
     return List<Map<String, dynamic>>.from(rows);
+  }
+
+  static Future<int> fetchQuestionMix() async {
+    if (!enabled) return 50;
+    final row = await client
+        .from('game_settings')
+        .select('setting_value')
+        .eq('setting_key', 'question_mix')
+        .maybeSingle();
+    if (row == null || row['setting_value'] is! Map) return 50;
+    final value = Map<String, dynamic>.from(row['setting_value'] as Map);
+    final percent = value['quran_percent'];
+    return (percent is num ? percent.toInt() : 50).clamp(0, 100);
+  }
+
+  static Future<void> ownerSetQuestionMix(int quranPercent) async {
+    if (!enabled || !await CloudService.isOwner()) {
+      throw Exception('Owner access required');
+    }
+    final quran = quranPercent.clamp(0, 100);
+    await client.from('game_settings').upsert({
+      'setting_key': 'question_mix',
+      'setting_value': {
+        'quran_percent': quran,
+        'islamic_percent': 100 - quran,
+      },
+      'updated_at': DateTime.now().toUtc().toIso8601String(),
+      'updated_by': client.auth.currentUser!.id,
+    }, onConflict: 'setting_key');
   }
 
   static Future<Map<String, dynamic>?> dailyChallenge(String dateKey) async {
