@@ -366,9 +366,11 @@ class QuranGameService {
       Store.json('qgame_level_stars', <String, dynamic>{}) as Map,
     );
     final previousStars = (starsByLevel['$level'] as num?)?.toInt() ?? 0;
+    final totalStarsBefore = totalStars;
     if (earnedStars > previousStars) {
       starsByLevel['$level'] = earnedStars;
       await Store.setJson('qgame_level_stars', starsByLevel);
+      await Store.setInt('qgame_total_stars', totalStarsBefore + earnedStars - previousStars);
     }
     final bestCorrectByLevel = Map<String, dynamic>.from(
       Store.json('qgame_level_best_correct', <String, dynamic>{}) as Map,
@@ -631,6 +633,7 @@ class QuranGameService {
       'qgame_last_day',
       'qgame_level_history',
       'qgame_level_stars',
+      'qgame_total_stars',
       'qgame_level_best_correct',
       'qgame_history',
       'qgame_perfect_level_ids',
