@@ -12,6 +12,11 @@ class QuranGameQuestion {
   final String? recitationAudio;
   final int? globalAyahNumber;
   final String? explanation;
+  final String questionType;
+  final String questionText;
+  final String contextText;
+  final String sourceName;
+  final String sourceReference;
 
   const QuranGameQuestion({
     required this.id,
@@ -27,6 +32,11 @@ class QuranGameQuestion {
     this.recitationAudio,
     this.globalAyahNumber,
     this.explanation,
+    this.questionType = 'quran',
+    this.questionText = '',
+    this.contextText = '',
+    this.sourceName = '',
+    this.sourceReference = '',
   });
 
   Map<String, dynamic> toJson() => {
@@ -43,6 +53,11 @@ class QuranGameQuestion {
         'recitationAudio': recitationAudio,
         'globalAyahNumber': globalAyahNumber,
         'explanation': explanation,
+        'questionType': questionType,
+        'questionText': questionText,
+        'contextText': contextText,
+        'sourceName': sourceName,
+        'sourceReference': sourceReference,
       };
 
   factory QuranGameQuestion.fromJson(Map<String, dynamic> j) =>
@@ -60,10 +75,16 @@ class QuranGameQuestion {
         recitationAudio: (j['recitationAudio'] ?? j['recitation_audio']) as String?,
         globalAyahNumber: _nullableInt(j['globalAyahNumber'] ?? j['global_ayah_number']),
         explanation: (j['explanation']) as String?,
+        questionType: '${j['questionType'] ?? j['question_type'] ?? 'quran'}',
+        questionText: '${j['questionText'] ?? j['question_text'] ?? ''}',
+        contextText: '${j['contextText'] ?? j['context_text'] ?? ''}',
+        sourceName: '${j['sourceName'] ?? j['source_name'] ?? ''}',
+        sourceReference: '${j['sourceReference'] ?? j['source_reference'] ?? ''}',
       );
 
   static int _int(dynamic value) => (value as num).toInt();
   static int? _nullableInt(dynamic value) => value == null ? null : (value as num).toInt();
 
   String get maskedAyah => fullAyah.replaceFirst(hiddenWord, 'ـــــــ');
+  bool get isIslamicKnowledge => questionType == 'islamic';
 }
