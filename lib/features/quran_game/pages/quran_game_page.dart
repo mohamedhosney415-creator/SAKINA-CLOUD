@@ -422,8 +422,8 @@ class _QuranGamePageState extends State<QuranGamePage> {
   Widget _mapCard({bool compact = false}) {
     final current = QuranGameService.level;
     final maxLevel = QuranGameService.maximumAvailableLevel;
-    final first = max(1, current - (compact ? 1 : 2));
-    final last = min(maxLevel, current + (compact ? 2 : 4));
+    final first = max(1, current - (compact ? 1 : 2)).toInt();
+    final last = min(maxLevel, current + (compact ? 2 : 4)).toInt();
     return Padding(
       padding: const EdgeInsets.symmetric(horizontal: 17),
       child: Container(
@@ -1072,8 +1072,8 @@ class _QuranGameQuizPageState extends State<QuranGameQuizPage> {
         if (target < 0) {
           context = q.maskedAyah;
         } else {
-          final start = max(0, target - 4);
-          final end = min(words.length, target + 5);
+          final start = max(0, target - 4).toInt();
+          final end = min(words.length, target + 5).toInt();
           final excerpt = words.sublist(start, end);
           excerpt[target - start] = excerpt[target - start].replaceFirst(q.hiddenWord, 'ـــــــ');
           context = excerpt.join(' ');
