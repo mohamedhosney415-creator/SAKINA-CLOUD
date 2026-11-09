@@ -926,7 +926,7 @@ class _QuranGameQuizPageState extends State<QuranGameQuizPage> {
       showLevelResults = true;
       q = QuranGameService.questions.first;
     } else {
-      q = QuranGameService.nextQuestion(requestedLevel: QuranGameService.level);
+      q = QuranGameService.nextQuestion(requestedLevel: QuranGameService.level, daily: widget.daily);
       _loadVerseContext();
     }
   }
