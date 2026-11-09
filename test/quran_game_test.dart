@@ -1,5 +1,6 @@
 import 'package:flutter_test/flutter_test.dart';
 import '../lib/features/quran_game/data/quran_game_bank.dart';
+import '../lib/features/quran_game/data/islamic_knowledge_bank.dart';
 import '../lib/features/quran_game/services/quran_game_service.dart';
 
 void main() {
@@ -9,6 +10,19 @@ void main() {
       expect(question.options, contains(question.correctOption));
       expect(question.fullAyah, contains(question.hiddenWord));
       expect(question.level, inInclusiveRange(1, 100));
+    }
+  });
+
+  test('Islamic knowledge bank contains sourced valid multiple-choice questions', () {
+    expect(islamicKnowledgeBank, isNotEmpty);
+    for (final question in islamicKnowledgeBank) {
+      expect(question.isIslamicKnowledge, isTrue);
+      expect(question.questionText, isNotEmpty);
+      expect(question.options, hasLength(4));
+      expect(question.options.toSet(), hasLength(4));
+      expect(question.options, contains(question.correctOption));
+      expect(question.sourceName, isNotEmpty);
+      expect(question.sourceReference, isNotEmpty);
     }
   });
 
