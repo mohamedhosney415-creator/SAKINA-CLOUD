@@ -178,7 +178,7 @@ class _AdminPageState extends State<AdminPage> {
         },
         itemBuilder: (_) => [
           const PopupMenuItem(value: 'edit', child: Text('تعديل')),
-          PopupMenuItem(value: 'toggle', child: Text(q['active'] == true ? 'تعطيل' : 'تفعيل')),
+          PopupMenuItem(value: 'toggle', child: Text(q['active'] == true ? 'إيقاف النشر' : (q['question_type'] == 'islamic' ? 'اعتماد ونشر' : 'تفعيل'))),
           const PopupMenuItem(value: 'delete', child: Text('حذف')),
         ],
       ),
