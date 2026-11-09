@@ -77,7 +77,12 @@ class _QuranGamePageState extends State<QuranGamePage> {
         ),
         child: Scaffold(
           backgroundColor: background,
-          body: SafeArea(child: _body()),
+          body: Column(
+            children: [
+              if (widget.embedded) _embeddedTabs(),
+              Expanded(child: SafeArea(child: _body())),
+            ],
+          ),
           bottomNavigationBar: widget.embedded ? null : _bottomNav(),
         ),
       );
@@ -203,7 +208,7 @@ class _QuranGamePageState extends State<QuranGamePage> {
                       ),
                       const SizedBox(height: 4),
                       Text(
-                        'باقي سؤالان لتحافظ على سلسلتك اليوم.',
+                        'أكمل ${QuranGameService.currentLevelQuestionCount} أسئلة في المستوى لتحصل على النجوم.',
                         style: TextStyle(
                           color: Colors.white.withAlpha(205),
                           fontSize: 11,
@@ -444,7 +449,7 @@ class _QuranGamePageState extends State<QuranGamePage> {
                 2,
                 Icons.auto_awesome_rounded,
                 'خطوة جديدة',
-                '6 من 10 أسئلة مكتملة',
+                '${QuranGameService.questionsAnsweredInCurrentLevel} من ${QuranGameService.currentLevelQuestionCount} أسئلة مكتملة',
                 true,
                 current: true,
               ),
@@ -896,6 +901,32 @@ class _QuranGamePageState extends State<QuranGamePage> {
                 ),
               ),
             ],
+          ),
+        ),
+      );
+
+  Widget _embeddedTabs() => Padding(
+        padding: const EdgeInsets.fromLTRB(12, 8, 12, 2),
+        child: Row(
+          children: [
+            _embeddedTab('الرئيسية', Icons.home_rounded, 0),
+            _embeddedTab('المسار', Icons.map_rounded, 1),
+            _embeddedTab('الإنجازات', Icons.emoji_events_rounded, 2),
+            _embeddedTab('حسابي', Icons.person_rounded, 3),
+          ],
+        ),
+      );
+
+  Widget _embeddedTab(String label, IconData icon, int value) => Expanded(
+        child: InkWell(
+          onTap: () => setState(() => tab = value),
+          borderRadius: BorderRadius.circular(12),
+          child: Padding(
+            padding: const EdgeInsets.symmetric(vertical: 8),
+            child: Column(mainAxisSize: MainAxisSize.min, children: [
+              Icon(icon, size: 19, color: tab == value ? const Color(0xFF58B88C) : muted),
+              Text(label, style: TextStyle(fontSize: 10, fontWeight: FontWeight.w800, color: tab == value ? const Color(0xFF58B88C) : muted)),
+            ]),
           ),
         ),
       );
