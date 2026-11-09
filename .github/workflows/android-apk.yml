@@ -2,7 +2,7 @@ name: Build SAKINA APK
 
 on:
   push:
-    branches: [main, master, sakina-4-ui-streak]
+    branches: [main, master, sakina-4-ui-streak, feature/islamic-quiz-overhaul]
   workflow_dispatch:
 
 jobs:
