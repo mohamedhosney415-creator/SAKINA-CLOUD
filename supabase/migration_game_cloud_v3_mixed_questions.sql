@@ -92,3 +92,26 @@ values
 ('islamic-024',0,'',0,'','','["عمران","زكريا","هارون","إلياس"]'::jsonb,'عمران','medium',5,NULL,NULL,'ورد اسم مريم بنت عمران في القرآن.',TRUE,'islamic','ما اسم والد مريم عليها السلام كما ورد في القرآن؟','','القرآن الكريم','آل عمران 3:35-36'),
 ('islamic-025',0,'',0,'','','["الدين النصيحة","إنما الأعمال بالنيات","من حسن إسلام المرء","لا يؤمن أحدكم"]'::jsonb,'إنما الأعمال بالنيات','medium',5,NULL,NULL,'حديث مشهور في الإخلاص والنية.',TRUE,'islamic','ما العبارة التي يبدأ بها حديث «إنما الأعمال بالنيات»؟','','صحيح البخاري وصحيح مسلم','حديث عمر بن الخطاب رضي الله عنه: إنما الأعمال بالنيات')
 on conflict (id) do nothing;
+
+
+-- Include collected game stars in the owner-only player analytics view.
+create or replace view public.game_admin_player_stats
+with (security_invoker = true)
+as
+select
+  gp.user_id,
+  p.email,
+  p.display_name,
+  gp.data,
+  gp.updated_at,
+  coalesce((gp.data->>'qgame_level')::int, 1) as level,
+  coalesce((gp.data->>'qgame_score')::bigint, 0) as score,
+  coalesce((gp.data->>'qgame_noor')::bigint, 0) as noor,
+  coalesce((gp.data->>'qgame_total')::bigint, 0) as total_questions,
+  coalesce((gp.data->>'qgame_correct')::bigint, 0) as correct_answers,
+  coalesce((gp.data->>'qgame_streak')::int, 0) as streak,
+  coalesce((gp.data->>'qgame_total_stars')::int, 0) as stars
+from public.game_progress gp
+left join public.profiles p on p.id = gp.user_id;
+
+grant select on public.game_admin_player_stats to authenticated;
