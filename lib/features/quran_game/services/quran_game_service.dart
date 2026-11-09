@@ -162,6 +162,10 @@ class QuranGameService {
   static int get mistakesInCurrentLevel => Store.integer('qgame_level_mistakes')
       .clamp(0, currentLevelQuestionCount)
       .toInt();
+  static int get currentLevelPoints => Store.integer('qgame_level_points').clamp(0, 1 << 30).toInt();
+  static int get currentLevelAccuracy => currentLevelQuestionCount == 0
+      ? 0
+      : (correctAnswersInCurrentLevel * 100 / currentLevelQuestionCount).round();
   static int get streak =>
       Store.integer('qgame_streak').clamp(0, 36500).toInt();
   static int get longestStreak =>
@@ -292,6 +296,9 @@ class QuranGameService {
     await Store.setInt('qgame_combo', nextCombo);
     await Store.setInt('qgame_best_combo', max(bestCombo, nextCombo));
     await Store.setInt('qgame_score', score + points);
+    if (!daily && !retry) {
+      await Store.setInt('qgame_level_points', currentLevelPoints + points);
+    }
     await _credit(earnedNoor, 'إجابة صحيحة');
     if (daily) {
       await Store.setStr('qgame_daily_attempt_date', todayKey);
@@ -407,6 +414,7 @@ class QuranGameService {
     await Store.setInt('qgame_level_answered', 0);
     await Store.setInt('qgame_level_correct', 0);
     await Store.setInt('qgame_level_mistakes', 0);
+    await Store.setInt('qgame_level_points', 0);
     await Store.setJson('qgame_level_history', <String>[]);
     await _syncCloud();
     return true;
@@ -616,6 +624,7 @@ class QuranGameService {
       'qgame_level_answered',
       'qgame_level_correct',
       'qgame_level_mistakes',
+      'qgame_level_points',
       'qgame_daily_done',
       'qgame_daily_attempt_date',
       'qgame_daily_success_date',
