@@ -32,6 +32,15 @@ void main() {
     },
   );
 
+  test('question count grows by one every ten levels', () {
+    expect(QuranGameConfig.questionsForLevel(1), 3);
+    expect(QuranGameConfig.questionsForLevel(10), 3);
+    expect(QuranGameConfig.questionsForLevel(11), 4);
+    expect(QuranGameConfig.questionsForLevel(20), 4);
+    expect(QuranGameConfig.questionsForLevel(21), 5);
+    expect(QuranGameConfig.questionsForLevel(100), 12);
+  });
+
   test('daily answer does not advance ordinary level progress', () async {
     final q = quranGameBank.first;
     await QuranGameService.answer(q, true, daily: true);
