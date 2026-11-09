@@ -179,7 +179,7 @@ class GameCloudService {
     if (!enabled || !await CloudService.isOwner()) throw Exception('Owner access required');
     final rows = await client
         .from('game_admin_player_stats')
-        .select('user_id,email,display_name,updated_at,level,score,noor,total_questions,correct_answers,streak')
+        .select('user_id,email,display_name,updated_at,level,score,noor,total_questions,correct_answers,streak,stars')
         .order('updated_at', ascending: false);
     return List<Map<String, dynamic>>.from(rows);
   }
