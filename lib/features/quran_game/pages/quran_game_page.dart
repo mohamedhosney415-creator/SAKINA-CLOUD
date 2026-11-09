@@ -1261,7 +1261,7 @@ class _QuranGameQuizPageState extends State<QuranGameQuizPage> {
                   ),
                   const SizedBox(height: 20),
                   Text(
-                    answered ? q.fullAyah : (verseContext ?? q.contextText.isNotEmpty ? q.contextText : q.maskedAyah),
+                    answered ? q.fullAyah : (verseContext ?? (q.contextText.isNotEmpty ? q.contextText : q.maskedAyah)),
                     textAlign: TextAlign.center,
                     textDirection: TextDirection.rtl,
                     style: quranStyle(25, Theme.of(context).colorScheme.onSurface),
