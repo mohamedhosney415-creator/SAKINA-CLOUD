@@ -87,4 +87,15 @@ class QuranGameQuestion {
 
   String get maskedAyah => fullAyah.replaceFirst(hiddenWord, 'ـــــــ');
   bool get isIslamicKnowledge => questionType == 'islamic';
+
+  QuranGameQuestion withLevel(int value) => QuranGameQuestion(
+        id: id, surahNumber: surahNumber, surahName: surahName,
+        ayahNumber: ayahNumber, fullAyah: fullAyah, hiddenWord: hiddenWord,
+        options: options, correctOption: correctOption, difficulty: difficulty,
+        level: value, recitationAudio: recitationAudio,
+        globalAyahNumber: globalAyahNumber, explanation: explanation,
+        questionType: questionType, questionText: questionText,
+        contextText: contextText, sourceName: sourceName,
+        sourceReference: sourceReference,
+      );
 }
