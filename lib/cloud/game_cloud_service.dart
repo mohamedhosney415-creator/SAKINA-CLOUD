@@ -196,6 +196,13 @@ class GameCloudService {
     await client.from('game_questions').upsert(data, onConflict: 'id');
   }
 
+  static Future<void> ownerDeleteQuestion(String id) async {
+    if (!enabled || !await CloudService.isOwner()) {
+      throw Exception('Owner access required');
+    }
+    await client.from('game_questions').delete().eq('id', id);
+  }
+
   static Future<void> ownerSetQuestionActive(String id, bool active) async {
     if (!enabled || !await CloudService.isOwner()) throw Exception('Owner access required');
     await client.from('game_questions').update({'active': active, 'updated_at': DateTime.now().toUtc().toIso8601String()}).eq('id', id);
