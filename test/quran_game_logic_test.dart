@@ -41,34 +41,41 @@ void main() {
   });
 
   test(
-    'ten correct unique answers complete a perfect level exactly once',
+    'three correct answers complete level one but wait for explicit continuation',
     () async {
-      final levelQuestions = quranGameBank.where((q) => q.level == 1);
+      final levelQuestions = quranGameBank.where((q) => q.level == 1).take(3);
       for (final q in levelQuestions) {
         await QuranGameService.answer(q, true);
       }
-      expect(QuranGameService.questionsAnsweredInCurrentLevel, 10);
+      expect(QuranGameService.questionsAnsweredInCurrentLevel, 3);
       expect(await QuranGameService.completeLevelIfReady(), isTrue);
-      expect(QuranGameService.level, 2);
+      expect(QuranGameService.level, 1);
+      expect(QuranGameService.levelCompleted, isTrue);
       expect(QuranGameService.perfectLevels, 1);
-      expect(QuranGameService.questionsAnsweredInCurrentLevel, 0);
+      expect(QuranGameService.currentLevelStars, 3);
+      expect(QuranGameService.totalStars, 3);
       expect(await QuranGameService.completeLevelIfReady(), isFalse);
+      expect(await QuranGameService.advanceToNextLevel(), isTrue);
+      expect(QuranGameService.level, 2);
+      expect(QuranGameService.questionsAnsweredInCurrentLevel, 0);
+      expect(QuranGameService.currentLevelPoints, 0);
     },
   );
 
   test(
-    'an incorrect answer prevents perfect status and resets combo',
+    'an incorrect answer prevents perfect status and keeps the result until continuation',
     () async {
-      final levelQuestions = quranGameBank.where((q) => q.level == 1).toList();
+      final levelQuestions = quranGameBank.where((q) => q.level == 1).take(3).toList();
       for (var i = 0; i < levelQuestions.length; i++) {
-        await QuranGameService.answer(levelQuestions[i], i != 3);
+        await QuranGameService.answer(levelQuestions[i], i != 1);
       }
       await QuranGameService.completeLevelIfReady();
       expect(QuranGameService.perfectLevels, 0);
-      expect(
-        QuranGameService.mistakesInCurrentLevel,
-        0,
-      ); // counters reset after completion
+      expect(QuranGameService.mistakesInCurrentLevel, 1);
+      expect(QuranGameService.level, 1);
+      expect(QuranGameService.levelCompleted, isTrue);
+      expect(QuranGameService.currentLevelStars, 1);
+      expect(await QuranGameService.advanceToNextLevel(), isTrue);
       expect(QuranGameService.level, 2);
     },
   );
