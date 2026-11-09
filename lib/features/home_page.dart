@@ -126,14 +126,14 @@ class _HomePageState extends State<HomePage> {
                     child: Column(
                         crossAxisAlignment: CrossAxisAlignment.start,
                         children: [
-                      Text('أكمل الآية',
+                      Text('مسابقة سكينة',
                           style: TextStyle(
                               fontWeight: FontWeight.w900, fontSize: 15.5)),
                       SizedBox(height: 3),
                       Text(
                           QuranGameService.dailyDone
-                              ? 'تحدي اليوم مكتمل • ${ar(QuranGameService.dailyChallenges)} تحديًا إجمالًا'
-                              : 'تحدي اليوم متاح • ${ar(QuranGameService.dailyChallenges)} تحديًا مكتملًا',
+                              ? 'تحدي اليوم مكتمل • المستوى ${ar(QuranGameService.level)}'
+                              : 'قرآن وثقافة إسلامية • المستوى ${ar(QuranGameService.level)}',
                           style: TextStyle(fontSize: 12.5)),
                     ])),
                 const Icon(Icons.chevron_left_rounded, color: goldDeep),
