@@ -283,7 +283,11 @@ class _AdminPageState extends State<AdminPage> {
         'correct_option': correct,
         'difficulty': '${existing?['difficulty'] ?? 'easy'}',
         'level': (int.tryParse(level.text) ?? 1).clamp(1, 100),
-        'active': existing == null ? questionType == 'quran' : existing['active'] != false,
+        'active': questionType == 'islamic'
+            ? false
+            : (existing == null || existing['active'] != false),
+        'reviewed_at': questionType == 'islamic' ? null : existing?['reviewed_at'],
+        'reviewed_by': questionType == 'islamic' ? null : existing?['reviewed_by'],
       });
       await _load();
     } catch (e) {
