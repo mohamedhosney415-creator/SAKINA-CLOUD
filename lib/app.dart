@@ -7,7 +7,6 @@ import 'core/settings.dart';
 import 'core/store.dart';
 import 'core/theme.dart';
 import 'core/widgets.dart';
-import 'features/azkar_page.dart';
 import 'features/diagnostics_page.dart';
 import 'features/home_page.dart';
 import 'features/more_page.dart';
@@ -135,9 +134,8 @@ class _ShellState extends State<Shell> {
     const pages = <Widget>[
       HomePage(),
       PrayerPage(),
-      QuranGamePage(),
+      QuranGamePage(embedded: true),
       QuranPage(),
-      AzkarPage(),
       MorePage(),
     ];
     return Scaffold(
@@ -193,8 +191,6 @@ class _ShellState extends State<Shell> {
               Icons.quiz_outlined, Icons.quiz_rounded),
           SakinaNavItem(s.isEnglish ? 'Quran' : 'القرآن',
               Icons.menu_book_outlined, Icons.menu_book_rounded),
-          SakinaNavItem(s.isEnglish ? 'Adhkar' : 'الأذكار',
-              Icons.auto_awesome_outlined, Icons.auto_awesome_rounded),
           SakinaNavItem(s.isEnglish ? 'Tools' : 'المزيد',
               Icons.grid_view_outlined, Icons.grid_view_rounded),
         ],
