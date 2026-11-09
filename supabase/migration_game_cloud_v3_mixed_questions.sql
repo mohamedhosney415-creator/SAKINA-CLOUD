@@ -12,7 +12,9 @@ alter table public.game_questions
   add column if not exists question_text text not null default '',
   add column if not exists context_text text not null default '',
   add column if not exists source_name text not null default '',
-  add column if not exists source_reference text not null default '';
+  add column if not exists source_reference text not null default '',
+  add column if not exists reviewed_at timestamptz,
+  add column if not exists reviewed_by uuid references auth.users(id);
 
 do $$
 begin
