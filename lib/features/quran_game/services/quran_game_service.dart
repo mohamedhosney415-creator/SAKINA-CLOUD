@@ -104,7 +104,7 @@ class QuranGameService {
   static int get maximumAvailableLevel => questions.isEmpty
       ? 0
       : questions.map((q) => q.level).reduce((a, b) => a > b ? a : b).clamp(1, 100).toInt();
-  static int get currentLevelQuestionCount => questionsForLevel(level);
+  static int get currentLevelQuestionCount => QuranGameConfig.questionsForLevel(level);
   static int get quranQuestionPercent => Store.integer('qgame_quran_mix', 50).clamp(0, 100).toInt();
   static bool get levelCompleted => Store.flag('qgame_level_completed_$level');
   static bool isLevelCompleted(int value) => Store.flag('qgame_level_completed_$value');
@@ -118,7 +118,7 @@ class QuranGameService {
     final map = Store.json('qgame_level_best_correct', <String, dynamic>{});
     if (map is! Map) return 0;
     final best = map['$value'];
-    return (best is num ? best.toInt() : 0).clamp(0, questionsForLevel(value)).toInt();
+    return (best is num ? best.toInt() : 0).clamp(0, QuranGameConfig.questionsForLevel(value)).toInt();
   }
   static int get totalStars {
     final map = Store.json('qgame_level_stars', <String, dynamic>{});
