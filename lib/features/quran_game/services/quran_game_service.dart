@@ -3,10 +3,13 @@ import 'dart:math';
 import '../../../core/store.dart';
 import '../../../cloud/game_cloud_service.dart';
 import '../data/quran_game_bank.dart';
+import '../data/islamic_knowledge_bank.dart';
 import '../models/quran_game_question.dart';
 
 class QuranGameConfig {
-  static const questionsPerLevel = 10;
+  static const questionsPerLevel = 3;
+  static int questionsForLevel(int value) => 3 + ((value - 1) ~/ 10);
+
   static const basePoints = 10;
   static const levelBonus = 25;
   static const perfectBonus = 50;
@@ -63,7 +66,7 @@ class QuranGameService {
                 q.level <= 100 &&
                 q.options.length == 4 &&
                 q.options.contains(q.correctOption) &&
-                q.fullAyah.contains(q.hiddenWord))
+                (q.isIslamicKnowledge || q.fullAyah.contains(q.hiddenWord)))
             .toList(growable: false);
       }
     } catch (_) {
@@ -91,7 +94,26 @@ class QuranGameService {
       await GameCloudService.sync(preferRemote: true);
     } catch (_) {}
   }
-  static List<QuranGameQuestion> get questions => _remoteQuestions ?? quranGameBank;
+  static List<QuranGameQuestion> get questions => [
+        ...(_remoteQuestions ?? quranGameBank),
+        ...islamicKnowledgeBank,
+      ];
+  static int get maximumAvailableLevel => questions.isEmpty
+      ? 0
+      : questions.map((q) => q.level).reduce(max).clamp(1, 100).toInt();
+  static int get currentLevelQuestionCount => questionsForLevel(level);
+  static bool get levelCompleted => Store.flag('qgame_level_completed_$level');
+  static int get currentLevelStars {
+    final total = currentLevelQuestionCount;
+    final correct = correctAnswersInCurrentLevel;
+    if (total <= 0) return 0;
+    if (correct == total && questionsAnsweredInCurrentLevel == total) return 3;
+    final ratio = correct / total;
+    if (ratio >= .8) return 2;
+    if (ratio >= .5) return 1;
+    return 0;
+  }
+
   static int get level => Store.integer('qgame_level', 1).clamp(1, 100).toInt();
   static int get score =>
       Store.integer('qgame_score').clamp(0, 1 << 30).toInt();
@@ -109,14 +131,14 @@ class QuranGameService {
       Store.integer('qgame_wrong').clamp(0, totalQuestions).toInt();
   static int get questionsAnsweredInCurrentLevel =>
       Store.integer('qgame_level_answered')
-          .clamp(0, QuranGameConfig.questionsPerLevel)
+          .clamp(0, currentLevelQuestionCount)
           .toInt();
   static int get correctAnswersInCurrentLevel =>
       Store.integer('qgame_level_correct')
-          .clamp(0, QuranGameConfig.questionsPerLevel)
+          .clamp(0, currentLevelQuestionCount)
           .toInt();
   static int get mistakesInCurrentLevel => Store.integer('qgame_level_mistakes')
-      .clamp(0, QuranGameConfig.questionsPerLevel)
+      .clamp(0, currentLevelQuestionCount)
       .toInt();
   static int get streak =>
       Store.integer('qgame_streak').clamp(0, 36500).toInt();
@@ -185,14 +207,14 @@ class QuranGameService {
         q.level > 100 ||
         q.options.length != 4 ||
         !q.options.contains(q.correctOption) ||
-        !q.fullAyah.contains(q.hiddenWord)) {
+        (!q.isIslamicKnowledge && !q.fullAyah.contains(q.hiddenWord))) {
       throw ArgumentError('Invalid Quran game question');
     }
     if (!daily && q.level != level)
       throw StateError('Question does not belong to the current level');
     final alreadyAnswered = daily
         ? dailyDone
-        : questionsAnsweredInCurrentLevel >= QuranGameConfig.questionsPerLevel;
+        : questionsAnsweredInCurrentLevel >= currentLevelQuestionCount;
     if (alreadyAnswered) return {'points': 0, 'noor': 0, 'combo': combo};
     final levelHistory =
         (Store.json('qgame_level_history', <dynamic>[]) as List).cast<String>();
@@ -279,13 +301,13 @@ class QuranGameService {
   }
 
   static Future<bool> completeLevelIfReady() async {
-    if (questionsAnsweredInCurrentLevel != QuranGameConfig.questionsPerLevel)
+    if (questionsAnsweredInCurrentLevel != currentLevelQuestionCount)
       return false;
-    if (Store.flag('qgame_level_completed_$level')) return false;
+    if (levelCompleted) return false;
     await Store.setFlag('qgame_level_completed_$level', true);
     await _credit(QuranGameConfig.levelBonus, 'إكمال المستوى $level');
-    final isPerfect =
-        correctAnswersInCurrentLevel == 10 && mistakesInCurrentLevel == 0;
+    final isPerfect = correctAnswersInCurrentLevel == currentLevelQuestionCount &&
+        mistakesInCurrentLevel == 0;
     if (isPerfect) {
       await Store.setInt('qgame_perfect_levels', perfectLevels + 1);
       await Store.setJson('qgame_perfect_level_ids', [
@@ -294,11 +316,6 @@ class QuranGameService {
       ]);
       await _credit(QuranGameConfig.perfectBonus, 'مستوى مثالي');
     }
-    if (level < 100) await Store.setInt('qgame_level', level + 1);
-    await Store.setInt('qgame_level_answered', 0);
-    await Store.setInt('qgame_level_correct', 0);
-    await Store.setInt('qgame_level_mistakes', 0);
-    await Store.setJson('qgame_level_history', <String>[]);
     await Store.setJson('qgame_pending_rewards', [
       ...(Store.json('qgame_pending_rewards', <dynamic>[]) as List),
       {
@@ -313,6 +330,20 @@ class QuranGameService {
       amount: QuranGameConfig.levelBonus + (isPerfect ? QuranGameConfig.perfectBonus : 0),
       metadata: {'level': level},
     ).catchError((_) {});
+    await _syncCloud();
+    return true;
+  }
+
+  /// Advance only after the player has viewed the completed-level result.
+  static Future<bool> advanceToNextLevel() async {
+    if (!levelCompleted || level >= maximumAvailableLevel || level >= 100) {
+      return false;
+    }
+    await Store.setInt('qgame_level', level + 1);
+    await Store.setInt('qgame_level_answered', 0);
+    await Store.setInt('qgame_level_correct', 0);
+    await Store.setInt('qgame_level_mistakes', 0);
+    await Store.setJson('qgame_level_history', <String>[]);
     await _syncCloud();
     return true;
   }
@@ -500,8 +531,9 @@ class QuranGameService {
     return kept;
   }
 
-  static String hintFor(QuranGameQuestion q) =>
-      'تلميح: الكلمة الناقصة تبدأ بـ «${q.hiddenWord.substring(0, 1)}»';
+  static String hintFor(QuranGameQuestion q) => q.isIslamicKnowledge
+      ? 'تلميح: ${q.explanation ?? 'راجع مصدر السؤال'}'
+      : 'تلميح: الكلمة الناقصة تبدأ بـ «${q.hiddenWord.substring(0, 1)}»';
 
   static Future<void> reset() async {
     final keys = [
