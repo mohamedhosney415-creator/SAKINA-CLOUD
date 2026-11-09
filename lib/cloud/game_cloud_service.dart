@@ -206,7 +206,12 @@ class GameCloudService {
 
   static Future<void> ownerSetQuestionActive(String id, bool active) async {
     if (!enabled || !await CloudService.isOwner()) throw Exception('Owner access required');
-    await client.from('game_questions').update({'active': active, 'updated_at': DateTime.now().toUtc().toIso8601String()}).eq('id', id);
+    await client.from('game_questions').update({
+      'active': active,
+      'updated_at': DateTime.now().toUtc().toIso8601String(),
+      'reviewed_at': active ? DateTime.now().toUtc().toIso8601String() : null,
+      'reviewed_by': active ? client.auth.currentUser!.id : null,
+    }).eq('id', id);
   }
 
   static Future<void> ownerSetDailyChallenge({required String dateKey, required String questionId, int reward = 30}) async {
