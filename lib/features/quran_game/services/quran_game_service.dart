@@ -107,6 +107,17 @@ class QuranGameService {
   static int get currentLevelQuestionCount => questionsForLevel(level);
   static int get quranQuestionPercent => Store.integer('qgame_quran_mix', 50).clamp(0, 100);
   static bool get levelCompleted => Store.flag('qgame_level_completed_$level');
+  static int starsForLevel(int value) {
+    final map = Store.json('qgame_level_stars', <String, dynamic>{});
+    if (map is! Map) return 0;
+    final stars = map['$value'];
+    return (stars is num ? stars.toInt() : 0).clamp(0, 3);
+  }
+  static int get totalStars {
+    final map = Store.json('qgame_level_stars', <String, dynamic>{});
+    if (map is! Map) return 0;
+    return map.values.fold<int>(0, (sum, value) => sum + (value is num ? value.toInt().clamp(0, 3) : 0));
+  }
   static int get currentLevelStars {
     final total = currentLevelQuestionCount;
     final correct = correctAnswersInCurrentLevel;
@@ -336,6 +347,15 @@ class QuranGameService {
     await _credit(QuranGameConfig.levelBonus, 'إكمال المستوى $level');
     final isPerfect = correctAnswersInCurrentLevel == currentLevelQuestionCount &&
         mistakesInCurrentLevel == 0;
+    final earnedStars = currentLevelStars;
+    final starsByLevel = Map<String, dynamic>.from(
+      Store.json('qgame_level_stars', <String, dynamic>{}) as Map,
+    );
+    final previousStars = (starsByLevel['$level'] as num?)?.toInt() ?? 0;
+    if (earnedStars > previousStars) {
+      starsByLevel['$level'] = earnedStars;
+      await Store.setJson('qgame_level_stars', starsByLevel);
+    }
     if (isPerfect) {
       await Store.setInt('qgame_perfect_levels', perfectLevels + 1);
       await Store.setJson('qgame_perfect_level_ids', [
@@ -350,6 +370,7 @@ class QuranGameService {
         'title': 'اكتمل المستوى $level',
         'noor': QuranGameConfig.levelBonus,
         'perfect': isPerfect,
+        'stars': earnedStars,
       },
     ]);
     await _checkAchievements();
@@ -585,6 +606,7 @@ class QuranGameService {
       'qgame_daily_success_date',
       'qgame_last_day',
       'qgame_level_history',
+      'qgame_level_stars',
       'qgame_history',
       'qgame_perfect_level_ids',
       'qgame_pending_rewards',
