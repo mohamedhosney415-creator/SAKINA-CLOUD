@@ -261,7 +261,7 @@ class QuranGameStatsPage extends StatelessWidget {
           _stat('المستوى الحالي', '${QuranGameService.level}'),
           _stat(
             'أسئلة المستوى الحالي',
-            '${QuranGameService.questionsAnsweredInCurrentLevel}/10',
+            '${QuranGameService.questionsAnsweredInCurrentLevel}/${QuranGameService.currentLevelQuestionCount}',
           ),
           _stat(
             'صحيحة في المستوى',

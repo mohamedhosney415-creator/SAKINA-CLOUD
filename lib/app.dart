@@ -7,12 +7,12 @@ import 'core/settings.dart';
 import 'core/store.dart';
 import 'core/theme.dart';
 import 'core/widgets.dart';
-import 'features/azkar_page.dart';
 import 'features/diagnostics_page.dart';
 import 'features/home_page.dart';
 import 'features/more_page.dart';
 import 'features/prayer_page.dart';
 import 'features/quran_page.dart';
+import 'features/quran_game/pages/quran_game_page.dart';
 import 'services/notification_service.dart';
 import 'services/backup_service.dart';
 import 'cloud/cloud_service.dart';
@@ -134,8 +134,8 @@ class _ShellState extends State<Shell> {
     const pages = <Widget>[
       HomePage(),
       PrayerPage(),
+      QuranGamePage(embedded: true),
       QuranPage(),
-      AzkarPage(),
       MorePage(),
     ];
     return Scaffold(
@@ -187,10 +187,10 @@ class _ShellState extends State<Shell> {
               Icons.home_rounded),
           SakinaNavItem(s.isEnglish ? 'Prayer' : 'الصلاة',
               Icons.access_time_rounded, Icons.access_time_filled_rounded),
+          SakinaNavItem(s.isEnglish ? 'Game' : 'اللعبة',
+              Icons.quiz_outlined, Icons.quiz_rounded),
           SakinaNavItem(s.isEnglish ? 'Quran' : 'القرآن',
               Icons.menu_book_outlined, Icons.menu_book_rounded),
-          SakinaNavItem(s.isEnglish ? 'Adhkar' : 'الأذكار',
-              Icons.auto_awesome_outlined, Icons.auto_awesome_rounded),
           SakinaNavItem(s.isEnglish ? 'Tools' : 'المزيد',
               Icons.grid_view_outlined, Icons.grid_view_rounded),
         ],

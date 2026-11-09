@@ -100,13 +100,51 @@ class GameCloudService {
 
   static Future<List<Map<String, dynamic>>> fetchQuestions() async {
     if (!enabled) return const [];
-    final rows = await client
-        .from('game_questions')
-        .select('id,surah_number,surah_name,ayah_number,full_ayah,hidden_word,options,correct_option,difficulty,level,recitation_audio,global_ayah_number,explanation')
-        .eq('active', true)
-        .order('level')
-        .order('id');
-    return List<Map<String, dynamic>>.from(rows);
+    const pageSize = 500;
+    final result = <Map<String, dynamic>>[];
+    for (var start = 0;; start += pageSize) {
+      final rows = await client
+          .from('game_questions')
+          .select('id,surah_number,surah_name,ayah_number,full_ayah,hidden_word,options,correct_option,difficulty,level,recitation_audio,global_ayah_number,explanation,question_type,question_text,context_text,source_name,source_reference')
+          .eq('active', true)
+          .order('level')
+          .order('id')
+          .range(start, start + pageSize - 1);
+      final page = List<Map<String, dynamic>>.from(rows);
+      result.addAll(page);
+      if (page.length < pageSize) break;
+    }
+    return result;
+  }
+
+  static Future<int> fetchQuestionMix() async {
+    if (!enabled) return 50;
+    final row = await client
+        .from('game_settings')
+        .select('setting_value')
+        .eq('setting_key', 'question_mix')
+        .maybeSingle();
+    if (row == null || row['setting_value'] is! Map) return 50;
+    final value = Map<String, dynamic>.from(row['setting_value'] as Map);
+    final percent = value['quran_percent'];
+    return (percent is num ? percent.toInt() : 50).clamp(0, 100).toInt();
+  }
+
+  static Future<void> ownerSetQuestionMix(int quranPercent) async {
+    if (!enabled || !await CloudService.isOwner()) {
+      throw Exception('Owner access required');
+    }
+    final quran = quranPercent.clamp(0, 100).toInt();
+    await client.from('game_settings').upsert({
+      'setting_key': 'question_mix',
+      'setting_value': {
+        'quran_percent': quran,
+        'islamic_percent': 100 - quran,
+      },
+      'updated_at': DateTime.now().toUtc().toIso8601String(),
+      'updated_by': client.auth.currentUser!.id,
+    }, onConflict: 'setting_key');
+    await Store.setInt('qgame_quran_mix', quran);
   }
 
   static Future<Map<String, dynamic>?> dailyChallenge(String dateKey) async {
@@ -147,19 +185,37 @@ class GameCloudService {
 
   static Future<List<Map<String, dynamic>>> ownerPlayers() async {
     if (!enabled || !await CloudService.isOwner()) throw Exception('Owner access required');
-    final rows = await client
-        .from('game_admin_player_stats')
-        .select('user_id,email,display_name,updated_at,level,score,noor,total_questions,correct_answers,streak')
-        .order('updated_at', ascending: false);
-    return List<Map<String, dynamic>>.from(rows);
+    const pageSize = 500;
+    final result = <Map<String, dynamic>>[];
+    for (var start = 0;; start += pageSize) {
+      final rows = await client
+          .from('game_admin_player_stats')
+          .select('user_id,email,display_name,updated_at,level,score,noor,total_questions,correct_answers,streak,stars')
+          .order('updated_at', ascending: false)
+          .range(start, start + pageSize - 1);
+      final page = List<Map<String, dynamic>>.from(rows);
+      result.addAll(page);
+      if (page.length < pageSize) break;
+    }
+    return result;
   }
 
   static Future<List<Map<String, dynamic>>> ownerQuestions({int? level}) async {
     if (!enabled || !await CloudService.isOwner()) throw Exception('Owner access required');
-    var q = client.from('game_questions').select('*');
-    if (level != null) q = q.eq('level', level);
-    final rows = await q.order('level').order('id');
-    return List<Map<String, dynamic>>.from(rows);
+    const pageSize = 500;
+    final result = <Map<String, dynamic>>[];
+    for (var start = 0;; start += pageSize) {
+      var query = client.from('game_questions').select('*');
+      if (level != null) query = query.eq('level', level);
+      final rows = await query
+          .order('level')
+          .order('id')
+          .range(start, start + pageSize - 1);
+      final page = List<Map<String, dynamic>>.from(rows);
+      result.addAll(page);
+      if (page.length < pageSize) break;
+    }
+    return result;
   }
 
   static Future<void> ownerUpsertQuestion(Map<String, dynamic> data) async {
@@ -167,9 +223,21 @@ class GameCloudService {
     await client.from('game_questions').upsert(data, onConflict: 'id');
   }
 
+  static Future<void> ownerDeleteQuestion(String id) async {
+    if (!enabled || !await CloudService.isOwner()) {
+      throw Exception('Owner access required');
+    }
+    await client.from('game_questions').delete().eq('id', id);
+  }
+
   static Future<void> ownerSetQuestionActive(String id, bool active) async {
     if (!enabled || !await CloudService.isOwner()) throw Exception('Owner access required');
-    await client.from('game_questions').update({'active': active, 'updated_at': DateTime.now().toUtc().toIso8601String()}).eq('id', id);
+    await client.from('game_questions').update({
+      'active': active,
+      'updated_at': DateTime.now().toUtc().toIso8601String(),
+      'reviewed_at': active ? DateTime.now().toUtc().toIso8601String() : null,
+      'reviewed_by': active ? client.auth.currentUser!.id : null,
+    }).eq('id', id);
   }
 
   static Future<void> ownerSetDailyChallenge({required String dateKey, required String questionId, int reward = 30}) async {
