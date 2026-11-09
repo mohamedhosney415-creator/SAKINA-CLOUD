@@ -1,6 +1,12 @@
 -- SAKINA Game Cloud v3: mixed Quran + general Islamic knowledge questions.
 -- Safe additive migration: preserves the existing 1,000 Quran questions and player data.
 
+-- Let the owner inspect all player progress through the security-invoker admin view.
+drop policy if exists game_progress_owner_read on public.game_progress;
+create policy game_progress_owner_read
+  on public.game_progress for select to authenticated
+  using (public.is_owner());
+
 alter table public.game_questions
   add column if not exists question_type text not null default 'quran',
   add column if not exists question_text text not null default '',
