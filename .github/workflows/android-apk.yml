@@ -123,4 +123,3 @@ jobs:
         with:
           name: smoke-test-output
           path: out/
-
