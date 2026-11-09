@@ -105,25 +105,25 @@ class QuranGameService {
       ? 0
       : questions.map((q) => q.level).reduce(max).clamp(1, 100).toInt();
   static int get currentLevelQuestionCount => questionsForLevel(level);
-  static int get quranQuestionPercent => Store.integer('qgame_quran_mix', 50).clamp(0, 100);
+  static int get quranQuestionPercent => Store.integer('qgame_quran_mix', 50).clamp(0, 100).toInt();
   static bool get levelCompleted => Store.flag('qgame_level_completed_$level');
   static bool isLevelCompleted(int value) => Store.flag('qgame_level_completed_$value');
   static int starsForLevel(int value) {
     final map = Store.json('qgame_level_stars', <String, dynamic>{});
     if (map is! Map) return 0;
     final stars = map['$value'];
-    return (stars is num ? stars.toInt() : 0).clamp(0, 3);
+    return (stars is num ? stars.toInt() : 0).clamp(0, 3).toInt();
   }
   static int bestCorrectForLevel(int value) {
     final map = Store.json('qgame_level_best_correct', <String, dynamic>{});
     if (map is! Map) return 0;
     final best = map['$value'];
-    return (best is num ? best.toInt() : 0).clamp(0, questionsForLevel(value));
+    return (best is num ? best.toInt() : 0).clamp(0, questionsForLevel(value)).toInt();
   }
   static int get totalStars {
     final map = Store.json('qgame_level_stars', <String, dynamic>{});
     if (map is! Map) return 0;
-    return map.values.fold<int>(0, (sum, value) => sum + (value is num ? value.toInt().clamp(0, 3) : 0));
+    return map.values.fold<int>(0, (sum, value) => sum + (value is num ? value.toInt().clamp(0, 3).toInt() : 0));
   }
   static int get currentLevelStars {
     final total = currentLevelQuestionCount;
@@ -186,7 +186,7 @@ class QuranGameService {
   static int get longestStreakSafe => max(longestStreak, streak);
 
   static QuranGameQuestion nextQuestion({int requestedLevel = 1}) {
-    final safeLevel = requestedLevel.clamp(1, 100);
+    final safeLevel = requestedLevel.clamp(1, 100).toInt();
     final base = _remoteQuestions ?? quranGameBank;
     final quranPool = base
         .where((q) => !q.isIslamicKnowledge && q.level == safeLevel)
