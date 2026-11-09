@@ -500,125 +500,6 @@ class _QuranGamePageState extends State<QuranGamePage> {
     );
   }
 
-  Widget _chapter(
-    int n,
-    IconData icon,
-    String title,
-    String sub,
-    bool unlocked, {
-    bool current = false,
-  }) =>
-      Padding(
-        padding: const EdgeInsets.symmetric(vertical: 5),
-        child: Row(
-          children: [
-            Container(
-              width: 54,
-              height: 54,
-              decoration: BoxDecoration(
-                shape: BoxShape.circle,
-                color: current
-                    ? const Color(0xFF58B88C)
-                    : unlocked
-                        ? (dark
-                            ? const Color(0xFF23564D)
-                            : const Color(0xFFE0F1E9))
-                        : (dark
-                            ? const Color(0xFF263F3C)
-                            : const Color(0xFFF0F2EF)),
-                border: Border.all(
-                  color: current
-                      ? const Color(0xFFFFD166)
-                      : unlocked
-                          ? const Color(0xFF3C8D76)
-                          : Colors.grey.shade400,
-                  width: current ? 3 : 2,
-                ),
-                boxShadow: current
-                    ? [
-                        BoxShadow(
-                          color: const Color(0xFF58B88C).withAlpha(75),
-                          blurRadius: 14,
-                        ),
-                      ]
-                    : null,
-              ),
-              child: Icon(
-                icon,
-                color: current
-                    ? Colors.white
-                    : unlocked
-                        ? const Color(0xFF3C8D76)
-                        : muted,
-                size: 23,
-              ),
-            ),
-            const SizedBox(width: 11),
-            Expanded(
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  Text(
-                    'المحطة $n',
-                    style: TextStyle(
-                      color: current ? const Color(0xFF58B88C) : muted,
-                      fontSize: 9,
-                      fontWeight: FontWeight.w900,
-                    ),
-                  ),
-                  Text(
-                    title,
-                    style: TextStyle(
-                      color: ink,
-                      fontSize: 14,
-                      fontWeight: FontWeight.w900,
-                    ),
-                  ),
-                  Text(sub, style: TextStyle(color: muted, fontSize: 10)),
-                ],
-              ),
-            ),
-            if (current)
-              Container(
-                padding: const EdgeInsets.symmetric(horizontal: 7, vertical: 5),
-                decoration: BoxDecoration(
-                  color: const Color(0xFFFFD166),
-                  borderRadius: BorderRadius.circular(8),
-                ),
-                child: const Text(
-                  'متابعة',
-                  style: TextStyle(
-                    color: Color(0xFF76551F),
-                    fontSize: 9,
-                    fontWeight: FontWeight.w900,
-                  ),
-                ),
-              )
-            else if (unlocked)
-              Text(
-                '✓',
-                style: TextStyle(
-                  color: const Color(0xFF58B88C),
-                  fontSize: 20,
-                  fontWeight: FontWeight.w900,
-                ),
-              ),
-          ],
-        ),
-      );
-  Widget _mapLine() => Align(
-        alignment: AlignmentDirectional.centerStart,
-        child: Container(
-          width: 4,
-          height: 20,
-          margin: const EdgeInsetsDirectional.only(start: 25),
-          decoration: BoxDecoration(
-            color: dark ? const Color(0xFF4A776D) : const Color(0xFFB8DDCC),
-            borderRadius: BorderRadius.circular(4),
-          ),
-        ),
-      );
-
   Widget _quickTools() => Padding(
         padding: const EdgeInsets.symmetric(horizontal: 17),
         child: Row(
@@ -1413,13 +1294,13 @@ class _QuranGameQuizPageState extends State<QuranGameQuizPage> {
             const SizedBox(height: 8),
             Text('${QuranGameService.correctAnswersInCurrentLevel} من ${QuranGameService.currentLevelQuestionCount} إجابات صحيحة'),
             const SizedBox(height: 4),
-            Text('إجابات خاطئة: ${QuranGameService.mistakesInCurrentLevel}', style: TextStyle(color: muted, fontSize: 12)),
+            Text('إجابات خاطئة: ${QuranGameService.mistakesInCurrentLevel}', style: TextStyle(color: Theme.of(context).colorScheme.onSurface.withAlpha(150), fontSize: 12)),
             const SizedBox(height: 4),
-            Text('الدقة: ${QuranGameService.currentLevelAccuracy}%', style: TextStyle(color: muted, fontSize: 12)),
+            Text('الدقة: ${QuranGameService.currentLevelAccuracy}%', style: TextStyle(color: Theme.of(context).colorScheme.onSurface.withAlpha(150), fontSize: 12)),
             const SizedBox(height: 4),
-            Text('النقاط المكتسبة في المستوى: ${QuranGameService.currentLevelPoints} XP', style: TextStyle(color: muted, fontSize: 12)),
+            Text('النقاط المكتسبة في المستوى: ${QuranGameService.currentLevelPoints} XP', style: TextStyle(color: Theme.of(context).colorScheme.onSurface.withAlpha(150), fontSize: 12)),
             const SizedBox(height: 4),
-            Text('أفضل نتيجة: ${QuranGameService.bestCorrectForLevel(QuranGameService.level)} من ${QuranGameService.currentLevelQuestionCount}', style: TextStyle(color: muted, fontSize: 12)),
+            Text('أفضل نتيجة: ${QuranGameService.bestCorrectForLevel(QuranGameService.level)} من ${QuranGameService.currentLevelQuestionCount}', style: TextStyle(color: Theme.of(context).colorScheme.onSurface.withAlpha(150), fontSize: 12)),
             const SizedBox(height: 10),
             Row(mainAxisAlignment: MainAxisAlignment.center, children: List.generate(3, (i) => Icon(Icons.star_rounded, size: 36, color: i < QuranGameService.currentLevelStars ? const Color(0xFFFFC83D) : Colors.grey.shade400))),
             const SizedBox(height: 8),
