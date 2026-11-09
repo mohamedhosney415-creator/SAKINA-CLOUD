@@ -1399,6 +1399,8 @@ class _QuranGameQuizPageState extends State<QuranGameQuizPage> {
             const SizedBox(height: 8),
             Text('${QuranGameService.correctAnswersInCurrentLevel} من ${QuranGameService.currentLevelQuestionCount} إجابات صحيحة'),
             const SizedBox(height: 4),
+            Text('إجابات خاطئة: ${QuranGameService.mistakesInCurrentLevel}', style: TextStyle(color: muted, fontSize: 12)),
+            const SizedBox(height: 4),
             Text('أفضل نتيجة: ${QuranGameService.bestCorrectForLevel(QuranGameService.level)} من ${QuranGameService.currentLevelQuestionCount}', style: TextStyle(color: muted, fontSize: 12)),
             const SizedBox(height: 10),
             Row(mainAxisAlignment: MainAxisAlignment.center, children: List.generate(3, (i) => Icon(Icons.star_rounded, size: 36, color: i < QuranGameService.currentLevelStars ? const Color(0xFFFFC83D) : Colors.grey.shade400))),
