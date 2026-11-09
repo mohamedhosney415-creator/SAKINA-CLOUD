@@ -1051,37 +1051,51 @@ class _QuranGameQuizPageState extends State<QuranGameQuizPage> {
   }
 
   Future<void> _loadVerseContext() async {
-    if (q.isIslamicKnowledge || q.surahNumber < 1 || q.ayahNumber < 1) {
+    final question = q;
+    if (question.isIslamicKnowledge ||
+        question.surahNumber < 1 ||
+        question.ayahNumber < 1) {
       if (mounted) setState(() => verseContext = null);
       return;
     }
     try {
-      final ayahs = await QuranService.text(q.surahNumber);
-      final currentIndex = ayahs.indexWhere((a) => a.n == q.ayahNumber);
+      final ayahs = await QuranService.text(question.surahNumber);
+      final currentIndex =
+          ayahs.indexWhere((a) => a.n == question.ayahNumber);
       if (currentIndex < 0) return;
-      final words = q.fullAyah.trim().split(RegExp(r'\s+'));
+      final words = question.fullAyah.trim().split(RegExp(r'\s+'));
       String context;
       if (words.length <= 12) {
         final parts = <String>[];
         if (currentIndex > 0) parts.add(ayahs[currentIndex - 1].text);
-        parts.add(q.maskedAyah);
-        if (currentIndex + 1 < ayahs.length) parts.add(ayahs[currentIndex + 1].text);
+        parts.add(question.maskedAyah);
+        if (currentIndex + 1 < ayahs.length) {
+          parts.add(ayahs[currentIndex + 1].text);
+        }
         context = parts.join(' ۞ ');
       } else {
-        final target = words.indexWhere((word) => word.contains(q.hiddenWord));
+        final target =
+            words.indexWhere((word) => word.contains(question.hiddenWord));
         if (target < 0) {
-          context = q.maskedAyah;
+          context = question.maskedAyah;
         } else {
           final start = max(0, target - 4).toInt();
           final end = min(words.length, target + 5).toInt();
           final excerpt = words.sublist(start, end);
-          excerpt[target - start] = excerpt[target - start].replaceFirst(q.hiddenWord, 'ـــــــ');
+          excerpt[target - start] =
+              excerpt[target - start].replaceFirst(question.hiddenWord, 'ـــــــ');
           context = excerpt.join(' ');
         }
       }
-      if (mounted) setState(() => verseContext = context);
+      if (mounted && q.id == question.id) {
+        setState(() => verseContext = context);
+      }
     } catch (_) {
-      if (mounted) setState(() => verseContext = q.contextText.isEmpty ? q.maskedAyah : q.contextText);
+      if (mounted && q.id == question.id) {
+        setState(() => verseContext = question.contextText.isEmpty
+            ? question.maskedAyah
+            : question.contextText);
+      }
     }
   }
 
