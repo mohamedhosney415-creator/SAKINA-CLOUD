@@ -119,14 +119,14 @@ class GameCloudService {
     if (row == null || row['setting_value'] is! Map) return 50;
     final value = Map<String, dynamic>.from(row['setting_value'] as Map);
     final percent = value['quran_percent'];
-    return (percent is num ? percent.toInt() : 50).clamp(0, 100);
+    return (percent is num ? percent.toInt() : 50).clamp(0, 100).toInt();
   }
 
   static Future<void> ownerSetQuestionMix(int quranPercent) async {
     if (!enabled || !await CloudService.isOwner()) {
       throw Exception('Owner access required');
     }
-    final quran = quranPercent.clamp(0, 100);
+    final quran = quranPercent.clamp(0, 100).toInt();
     await client.from('game_settings').upsert({
       'setting_key': 'question_mix',
       'setting_value': {
