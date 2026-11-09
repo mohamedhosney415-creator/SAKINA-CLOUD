@@ -58,6 +58,9 @@ class QuranGameService {
   static Future<void> loadRemoteQuestions() async {
     try {
       final rows = await GameCloudService.fetchQuestions();
+      try {
+        await Store.setInt('qgame_quran_mix', await GameCloudService.fetchQuestionMix());
+      } catch (_) {}
       if (rows.length >= 100) {
         _remoteQuestions = rows
             .map(QuranGameQuestion.fromJson)
@@ -102,6 +105,7 @@ class QuranGameService {
       ? 0
       : questions.map((q) => q.level).reduce(max).clamp(1, 100).toInt();
   static int get currentLevelQuestionCount => questionsForLevel(level);
+  static int get quranQuestionPercent => Store.integer('qgame_quran_mix', 50).clamp(0, 100);
   static bool get levelCompleted => Store.flag('qgame_level_completed_$level');
   static int get currentLevelStars {
     final total = currentLevelQuestionCount;
@@ -201,7 +205,7 @@ class QuranGameService {
         ? freshKnowledge
         : knowledgePool.where((q) => !seenThisLevel.contains(q.id)).toList();
     final chooseKnowledge = availableKnowledge.isNotEmpty &&
-        (availableQuran.isEmpty || _random.nextBool());
+        (availableQuran.isEmpty || _random.nextInt(100) >= quranQuestionPercent);
     final source = chooseKnowledge ? availableKnowledge : availableQuran;
     if (source.isEmpty) {
       throw StateError('No unused questions remain for level $safeLevel');
