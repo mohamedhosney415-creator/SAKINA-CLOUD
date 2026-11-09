@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import '../core/theme.dart';
 import '../core/widgets.dart';
 import 'about_page.dart';
+import 'azkar_page.dart';
 import 'account_page.dart';
 import 'calendar_page.dart';
 import 'challenges_page.dart';
@@ -68,6 +69,8 @@ class _MorePageState extends State<MorePage> {
               Icons.favorite_rounded, const FavoritesPage()),
         ]),
         _MoreGroup('العبادة اليومية', [
+          _MoreItem('الأذكار', 'أذكار الصباح والمساء والأذكار اليومية',
+              Icons.auto_awesome_rounded, const AzkarPage()),
           _MoreItem('مساعد سكينة اليومي', 'برنامج القرآن والأذكار والتسبيح',
               Icons.today_rounded, const DailyAssistantPage()),
           _MoreItem('تحديات سكينة', 'تحديات اختيارية للاستمرار',
