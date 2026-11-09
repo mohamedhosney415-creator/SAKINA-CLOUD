@@ -117,7 +117,7 @@ class _AdminPageState extends State<AdminPage> {
     ...players.map((p) => Card(child: ListTile(
       leading: const CircleAvatar(child: Icon(Icons.person)),
       title: Text('${p['display_name'] ?? p['email'] ?? 'مستخدم'}'),
-      subtitle: Text('Level ${p['level'] ?? 1} • Score ${p['score'] ?? 0} • Noor ${p['noor'] ?? 0}\nإجابات: ${p['correct_answers'] ?? 0}/${p['total_questions'] ?? 0} • Streak: ${p['streak'] ?? 0}'),
+      subtitle: Text('Level ${p['level'] ?? 1} • Score ${p['score'] ?? 0} • Noor ${p['noor'] ?? 0}\nإجابات: ${p['correct_answers'] ?? 0}/${p['total_questions'] ?? 0} • Streak: ${p['streak'] ?? 0} • Stars: ${p['stars'] ?? 0}'),
       trailing: IconButton(icon: const Icon(Icons.tune), onPressed: () => _adjustNoor(p)),
     ))),
     if (players.isEmpty) const Padding(padding: EdgeInsets.all(32), child: Center(child: Text('لا يوجد لاعبون بعد'))),
