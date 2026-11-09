@@ -12,7 +12,8 @@ import 'quran_game_aux_pages.dart';
 
 /// الواجهة المستقلة للعبة: جلسة ليلية، XP، أهداف، مسار ومحطات وتنقل داخلي.
 class QuranGamePage extends StatefulWidget {
-  const QuranGamePage({super.key});
+  final bool embedded;
+  const QuranGamePage({super.key, this.embedded = false});
   @override
   State<QuranGamePage> createState() => _QuranGamePageState();
 }
@@ -77,7 +78,7 @@ class _QuranGamePageState extends State<QuranGamePage> {
         child: Scaffold(
           backgroundColor: background,
           body: SafeArea(child: _body()),
-          bottomNavigationBar: _bottomNav(),
+          bottomNavigationBar: widget.embedded ? null : _bottomNav(),
         ),
       );
 
