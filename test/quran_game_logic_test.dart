@@ -41,6 +41,19 @@ void main() {
     expect(QuranGameConfig.questionsForLevel(100), 12);
   });
 
+  test('question mix supports both categories and avoids repeats within a level', () async {
+    await Store.setInt('qgame_quran_mix', 0);
+    final ids = <String>{};
+    for (var i = 0; i < 3; i++) {
+      final question = QuranGameService.nextQuestion(requestedLevel: 1);
+      expect(question.isIslamicKnowledge, isTrue);
+      expect(ids.add(question.id), isTrue);
+      await QuranGameService.answer(question, true);
+    }
+    expect(QuranGameService.questionsAnsweredInCurrentLevel, 3);
+    expect(ids, hasLength(3));
+  });
+
   test('daily answer does not advance ordinary level progress', () async {
     final q = quranGameBank.first;
     await QuranGameService.answer(q, true, daily: true);
