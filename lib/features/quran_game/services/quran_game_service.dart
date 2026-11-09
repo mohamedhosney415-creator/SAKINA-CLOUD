@@ -193,7 +193,13 @@ class QuranGameService {
     final safeLevel = requestedLevel.clamp(1, 100).toInt();
     final base = _remoteQuestions ?? quranGameBank;
     if (daily) {
-      final allQuestions = questions;
+      final allQuestions = questions.fold<Map<String, QuranGameQuestion>>(
+        <String, QuranGameQuestion>{},
+        (map, question) {
+          map[question.id] = question;
+          return map;
+        },
+      ).values.toList();
       final recentQuestions = history.take(4).toSet();
       final freshDaily = allQuestions.where((q) => !recentQuestions.contains(q.id)).toList();
       final dailyPool = freshDaily.isNotEmpty ? freshDaily : allQuestions;
