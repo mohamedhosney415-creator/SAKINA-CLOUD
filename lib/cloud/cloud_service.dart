@@ -97,11 +97,20 @@ class CloudService {
   }
 
   static Future<List<Map<String, dynamic>>> adminUsers() async {
-    final rows = await client
-        .from('profiles')
-        .select('*')
-        .order('created_at', ascending: false);
-    return List<Map<String, dynamic>>.from(rows);
+    if (!enabled || !await isOwner()) throw Exception('Owner access required');
+    const pageSize = 500;
+    final result = <Map<String, dynamic>>[];
+    for (var start = 0;; start += pageSize) {
+      final rows = await client
+          .from('profiles')
+          .select('*')
+          .order('created_at', ascending: false)
+          .range(start, start + pageSize - 1);
+      final page = List<Map<String, dynamic>>.from(rows);
+      result.addAll(page);
+      if (page.length < pageSize) break;
+    }
+    return result;
   }
 
   static String prettyJson(Object value) =>
