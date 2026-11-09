@@ -132,7 +132,7 @@ class _QuranGamePageState extends State<QuranGamePage> {
             '🔥 ${QuranGameService.streak} أيام متتالية',
           ),
           _weeklyStreak(),
-          _sectionTitle('خريطة الرحلة', 'الفصل 1 من 12'),
+          _sectionTitle('خريطة المستويات', 'المستوى ${QuranGameService.level} من ${QuranGameService.maximumAvailableLevel}'),
           _mapCard(compact: true),
           _sectionTitle('وصول سريع', 'كل أدواتك'),
           _quickTools(),
@@ -171,7 +171,7 @@ class _QuranGamePageState extends State<QuranGamePage> {
                       style: TextStyle(color: Colors.white70, fontSize: 11),
                     ),
                     Text(
-                      'رحلتك مع القرآن',
+                      'مسابقة سكينة الإسلامية',
                       style: TextStyle(
                         color: Colors.white,
                         fontWeight: FontWeight.w900,
@@ -419,63 +419,86 @@ class _QuranGamePageState extends State<QuranGamePage> {
         ),
       );
 
-  Widget _mapCard({bool compact = false}) => Padding(
-        padding: const EdgeInsets.symmetric(horizontal: 17),
-        child: Container(
-          padding: const EdgeInsets.fromLTRB(12, 10, 12, 12),
-          decoration: BoxDecoration(
-            color: surface,
-            borderRadius: BorderRadius.circular(23),
-            boxShadow: dark
-                ? null
-                : [
-                    BoxShadow(
-                      color: Colors.black.withAlpha(12),
-                      blurRadius: 15,
-                      offset: const Offset(0, 5),
-                    ),
-                  ],
-          ),
-          child: Column(
-            children: [
-              _chapter(
-                1,
-                Icons.menu_book_rounded,
-                'البداية المباركة',
-                'تم الإكمال • +10 XP',
-                true,
-              ),
-              _mapLine(),
-              _chapter(
-                2,
-                Icons.auto_awesome_rounded,
-                'خطوة جديدة',
-                '${QuranGameService.questionsAnsweredInCurrentLevel} من ${QuranGameService.currentLevelQuestionCount} أسئلة مكتملة',
-                true,
-                current: true,
-              ),
-              _mapLine(),
-              _chapter(
-                3,
-                Icons.lock_rounded,
-                'ذاكرة أقوى',
-                'أكمل المحطة الحالية للفتح',
-                false,
-              ),
-              if (!compact) ...[
-                _mapLine(),
-                _chapter(
-                  4,
-                  Icons.lock_rounded,
-                  'نور الذاكرة',
-                  'محطة مقفولة',
-                  false,
-                ),
-              ],
-            ],
-          ),
+  Widget _mapCard({bool compact = false}) {
+    final current = QuranGameService.level;
+    final maxLevel = QuranGameService.maximumAvailableLevel;
+    final first = max(1, current - (compact ? 1 : 2));
+    final last = min(maxLevel, current + (compact ? 2 : 4));
+    return Padding(
+      padding: const EdgeInsets.symmetric(horizontal: 17),
+      child: Container(
+        padding: const EdgeInsets.all(14),
+        decoration: BoxDecoration(
+          color: surface,
+          borderRadius: BorderRadius.circular(23),
+          boxShadow: dark ? null : [BoxShadow(color: Colors.black.withAlpha(12), blurRadius: 15, offset: const Offset(0, 5))],
         ),
-      );
+        child: Column(
+          children: [
+            for (var value = first; value <= last; value++) _levelNode(value),
+            if (last < maxLevel)
+              Padding(
+                padding: const EdgeInsets.only(top: 8),
+                child: Text('يتبقى ${maxLevel - last} مستوى في الرحلة', style: TextStyle(color: muted, fontSize: 11)),
+              ),
+          ],
+        ),
+      ),
+    );
+  }
+
+  Widget _levelNode(int value) {
+    final isCurrent = value == QuranGameService.level;
+    final completed = QuranGameService.isLevelCompleted(value);
+    final unlocked = value <= QuranGameService.level;
+    final stars = QuranGameService.starsForLevel(value);
+    final subtitle = completed
+        ? 'مكتمل • ${stars} من 3 نجوم'
+        : isCurrent
+            ? '${QuranGameService.questionsAnsweredInCurrentLevel} من ${QuranGameService.currentLevelQuestionCount} أسئلة'
+            : 'أكمل المستوى السابق لفتحه';
+    return Padding(
+      padding: const EdgeInsets.symmetric(vertical: 5),
+      child: InkWell(
+        onTap: isCurrent ? () => open(const QuranGameQuizPage()) : null,
+        borderRadius: BorderRadius.circular(15),
+        child: Row(
+          children: [
+            Container(
+              width: 43,
+              height: 43,
+              decoration: BoxDecoration(
+                shape: BoxShape.circle,
+                color: isCurrent
+                    ? const Color(0xFF58B88C)
+                    : completed
+                        ? (dark ? const Color(0xFF23564D) : const Color(0xFFE0F1E9))
+                        : (dark ? const Color(0xFF263F3C) : const Color(0xFFF0F2EF)),
+                border: Border.all(color: isCurrent ? const Color(0xFFFFD166) : completed ? const Color(0xFF3C8D76) : Colors.grey.shade400, width: isCurrent ? 3 : 1),
+              ),
+              child: Icon(completed ? Icons.check_rounded : unlocked ? Icons.menu_book_rounded : Icons.lock_rounded, color: isCurrent ? Colors.white : completed ? const Color(0xFF3C8D76) : muted, size: 20),
+            ),
+            const SizedBox(width: 11),
+            Expanded(
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Text('المستوى $value', style: TextStyle(color: isCurrent ? const Color(0xFF58B88C) : ink, fontSize: 13, fontWeight: FontWeight.w900)),
+                  Text(subtitle, style: TextStyle(color: muted, fontSize: 10)),
+                ],
+              ),
+            ),
+            if (completed)
+              Row(mainAxisSize: MainAxisSize.min, children: List.generate(3, (i) => Icon(Icons.star_rounded, size: 15, color: i < stars ? const Color(0xFFFFC83D) : Colors.grey.shade400)))
+            else if (isCurrent)
+              const Icon(Icons.play_circle_fill_rounded, color: Color(0xFF58B88C))
+            else
+              Icon(Icons.lock_outline_rounded, color: muted, size: 18),
+          ],
+        ),
+      ),
+    );
+  }
 
   Widget _chapter(
     int n,
@@ -662,7 +685,7 @@ class _QuranGamePageState extends State<QuranGamePage> {
 
   Widget _pathPage() => ListView(
         children: [
-          _sectionTitle('خريطة الرحلة كاملة', '12 فصلًا'),
+          _sectionTitle('خريطة المستويات كاملة', '${QuranGameService.maximumAvailableLevel} مستوى'),
           const SizedBox(height: 3),
           _mapCard(),
           _rewardsCard(),
