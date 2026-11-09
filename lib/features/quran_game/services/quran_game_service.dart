@@ -114,6 +114,12 @@ class QuranGameService {
     final stars = map['$value'];
     return (stars is num ? stars.toInt() : 0).clamp(0, 3);
   }
+  static int bestCorrectForLevel(int value) {
+    final map = Store.json('qgame_level_best_correct', <String, dynamic>{});
+    if (map is! Map) return 0;
+    final best = map['$value'];
+    return (best is num ? best.toInt() : 0).clamp(0, questionsForLevel(value));
+  }
   static int get totalStars {
     final map = Store.json('qgame_level_stars', <String, dynamic>{});
     if (map is! Map) return 0;
@@ -356,6 +362,14 @@ class QuranGameService {
     if (earnedStars > previousStars) {
       starsByLevel['$level'] = earnedStars;
       await Store.setJson('qgame_level_stars', starsByLevel);
+    }
+    final bestCorrectByLevel = Map<String, dynamic>.from(
+      Store.json('qgame_level_best_correct', <String, dynamic>{}) as Map,
+    );
+    final previousBest = (bestCorrectByLevel['$level'] as num?)?.toInt() ?? 0;
+    if (correctAnswersInCurrentLevel > previousBest) {
+      bestCorrectByLevel['$level'] = correctAnswersInCurrentLevel;
+      await Store.setJson('qgame_level_best_correct', bestCorrectByLevel);
     }
     if (isPerfect) {
       await Store.setInt('qgame_perfect_levels', perfectLevels + 1);
@@ -608,6 +622,7 @@ class QuranGameService {
       'qgame_last_day',
       'qgame_level_history',
       'qgame_level_stars',
+      'qgame_level_best_correct',
       'qgame_history',
       'qgame_perfect_level_ids',
       'qgame_pending_rewards',
