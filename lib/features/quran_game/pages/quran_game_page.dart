@@ -6,6 +6,7 @@ import 'package:just_audio/just_audio.dart';
 import '../../../core/theme.dart';
 import '../../../core/widgets.dart';
 import '../../../services/audio_controller.dart';
+import '../../../services/quran_service.dart';
 import '../models/quran_game_question.dart';
 import '../services/quran_game_service.dart';
 import 'quran_game_aux_pages.dart';
@@ -1005,6 +1006,7 @@ class QuranGameQuizPage extends StatefulWidget {
 
 class _QuranGameQuizPageState extends State<QuranGameQuizPage> {
   late QuranGameQuestion q;
+  String? verseContext;
   String? selected;
   bool? correct;
   bool loading = false;
@@ -1015,6 +1017,42 @@ class _QuranGameQuizPageState extends State<QuranGameQuizPage> {
   void initState() {
     super.initState();
     q = QuranGameService.nextQuestion(requestedLevel: QuranGameService.level);
+    _loadVerseContext();
+  }
+
+  Future<void> _loadVerseContext() async {
+    if (q.isIslamicKnowledge || q.surahNumber < 1 || q.ayahNumber < 1) {
+      if (mounted) setState(() => verseContext = null);
+      return;
+    }
+    try {
+      final ayahs = await QuranService.text(q.surahNumber);
+      final currentIndex = ayahs.indexWhere((a) => a.n == q.ayahNumber);
+      if (currentIndex < 0) return;
+      final words = q.fullAyah.trim().split(RegExp(r'\\s+'));
+      String context;
+      if (words.length <= 12) {
+        final parts = <String>[];
+        if (currentIndex > 0) parts.add(ayahs[currentIndex - 1].text);
+        parts.add(q.maskedAyah);
+        if (currentIndex + 1 < ayahs.length) parts.add(ayahs[currentIndex + 1].text);
+        context = parts.join(' ۞ ');
+      } else {
+        final target = words.indexWhere((word) => word.contains(q.hiddenWord));
+        if (target < 0) {
+          context = q.maskedAyah;
+        } else {
+          final start = max(0, target - 4);
+          final end = min(words.length, target + 5);
+          final excerpt = words.sublist(start, end);
+          excerpt[target - start] = excerpt[target - start].replaceFirst(q.hiddenWord, 'ـــــــ');
+          context = excerpt.join(' ');
+        }
+      }
+      if (mounted) setState(() => verseContext = context);
+    } catch (_) {
+      if (mounted) setState(() => verseContext = q.contextText.isEmpty ? q.maskedAyah : q.contextText);
+    }
   }
 
   @override
@@ -1094,7 +1132,9 @@ class _QuranGameQuizPageState extends State<QuranGameQuizPage> {
       showHint = false;
       choices = null;
       hasSecondChance = false;
+      verseContext = null;
     });
+    _loadVerseContext();
   }
 
   Future<void> _advanceLevel() async {
@@ -1219,16 +1259,12 @@ class _QuranGameQuizPageState extends State<QuranGameQuizPage> {
                     'سورة ${q.surahName} • آية ${q.ayahNumber}',
                     style: TextStyle(color: Theme.of(context).colorScheme.primary, fontWeight: FontWeight.w800),
                   ),
-                  if (q.contextText.isNotEmpty) ...[
-                    const SizedBox(height: 14),
-                    Text(q.contextText, textAlign: TextAlign.center, textDirection: TextDirection.rtl, style: quranStyle(21, Theme.of(context).colorScheme.onSurface.withAlpha(175))),
-                  ],
                   const SizedBox(height: 20),
                   Text(
-                    answered ? q.fullAyah : q.maskedAyah,
+                    answered ? q.fullAyah : (verseContext ?? q.contextText.isNotEmpty ? q.contextText : q.maskedAyah),
                     textAlign: TextAlign.center,
                     textDirection: TextDirection.rtl,
-                    style: quranStyle(28, Theme.of(context).colorScheme.onSurface),
+                    style: quranStyle(25, Theme.of(context).colorScheme.onSurface),
                   ),
                 ],
                 if (showHint) ...[
