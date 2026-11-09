@@ -16,6 +16,7 @@ class _AdminPageState extends State<AdminPage> {
   List<Map<String, dynamic>> players = [];
   List<Map<String, dynamic>> questions = [];
   List<Map<String, dynamic>> daily = [];
+  int quranMix = 50;
 
   @override void initState() { super.initState(); _load(); }
 
@@ -30,6 +31,7 @@ class _AdminPageState extends State<AdminPage> {
         GameCloudService.ownerPlayers(),
         GameCloudService.ownerQuestions(),
         GameCloudService.ownerDailyChallenges(),
+        GameCloudService.fetchQuestionMix().catchError((_) => 50),
       ]);
       if (!mounted) return;
       setState(() {
@@ -38,6 +40,7 @@ class _AdminPageState extends State<AdminPage> {
         players = List<Map<String, dynamic>>.from(results[2] as List);
         questions = List<Map<String, dynamic>>.from(results[3] as List);
         daily = List<Map<String, dynamic>>.from(results[4] as List);
+        quranMix = results[5] as int;
       });
     } catch (e) { if (mounted) setState(() => error = '$e'); }
     finally { if (mounted) setState(() => loading = false); }
@@ -70,8 +73,45 @@ class _AdminPageState extends State<AdminPage> {
     _metric('الأحداث آخر 7 أيام', overview['events_7d'] ?? 0, Icons.insights_outlined),
     _metric('وصلوا للمستوى 100', overview['level_100_players'] ?? 0, Icons.emoji_events_outlined),
     const SizedBox(height: 12),
-    Card(child: Padding(padding: const EdgeInsets.all(16), child: Text('البنك السحابي: ${overview['questions'] ?? 0} سؤال نشط. يمكن إدارة الأسئلة والتحدي اليومي من التبويبات الأخرى.', style: const TextStyle(height: 1.5)))),
+    Card(child: Padding(padding: const EdgeInsets.all(16), child: Text('البنك السحابي: ${overview['questions'] ?? 0} سؤال نشط، منها ${questions.where((q) => q['question_type'] == 'islamic').length} ثقافة إسلامية و${questions.where((q) => q['question_type'] != 'islamic').length} سؤال قرآني.', style: const TextStyle(height: 1.5)))),
+    _mixSettings(),
   ]));
+
+  Widget _mixSettings() => Card(
+        child: Padding(
+          padding: const EdgeInsets.all(16),
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              const Text('توزيع الأسئلة', style: TextStyle(fontSize: 17, fontWeight: FontWeight.w900)),
+              const SizedBox(height: 6),
+              Text('القرآن الكريم: $quranMix%  •  الثقافة الإسلامية: ${100 - quranMix}%'),
+              Slider(
+                value: quranMix.toDouble(),
+                min: 0,
+                max: 100,
+                divisions: 20,
+                label: '$quranMix%',
+                onChanged: (value) => setState(() => quranMix = value.round()),
+              ),
+              SizedBox(
+                width: double.infinity,
+                child: FilledButton(
+                  onPressed: () async {
+                    try {
+                      await GameCloudService.ownerSetQuestionMix(quranMix);
+                      if (mounted) ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('تم حفظ توزيع الأسئلة')));
+                    } catch (e) {
+                      if (mounted) ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text('تعذر حفظ التوزيع: $e')));
+                    }
+                  },
+                  child: const Text('حفظ التوزيع'),
+                ),
+              ),
+            ],
+          ),
+        ),
+      );
 
   Widget _players() => RefreshIndicator(onRefresh: _load, child: ListView(padding: const EdgeInsets.all(12), children: [
     ...players.map((p) => Card(child: ListTile(
@@ -94,27 +134,161 @@ class _AdminPageState extends State<AdminPage> {
   }
 
   Widget _questions() => ListView(padding: const EdgeInsets.all(12), children: [
-    Row(children: [Text('الأسئلة: ${questions.length}', style: const TextStyle(fontWeight: FontWeight.w900, fontSize: 18)), const Spacer(), FilledButton.icon(onPressed: _newQuestion, icon: const Icon(Icons.add), label: const Text('إضافة'))]),
+    Row(children: [
+      Text('الأسئلة: ${questions.length}', style: const TextStyle(fontWeight: FontWeight.w900, fontSize: 18)),
+      const Spacer(),
+      FilledButton.icon(onPressed: () => _newQuestion(), icon: const Icon(Icons.add), label: const Text('إضافة')),
+    ]),
     const SizedBox(height: 10),
     ...questions.take(250).map((q) => Card(child: ListTile(
-      title: Text('${q['id']} • Level ${q['level']}'),
-      subtitle: Text('${q['surah_name']} ${q['ayah_number']} • ${q['difficulty']}\n${q['full_ayah']}'),
+      title: Text('${q['id']} • Level ${q['level']} • ${q['question_type'] == 'islamic' ? 'ثقافة إسلامية' : 'قرآن'}'),
+      subtitle: Text(q['question_type'] == 'islamic'
+          ? '${q['question_text']}\nالمصدر: ${q['source_name'] ?? ''} • ${q['source_reference'] ?? ''}'
+          : '${q['surah_name']} ${q['ayah_number']} • ${q['difficulty']}\n${q['full_ayah']}'),
       isThreeLine: true,
-      trailing: PopupMenuButton<String>(onSelected: (v) async { if (v == 'toggle') { await GameCloudService.ownerSetQuestionActive('${q['id']}', q['active'] != true); await _load(); } }, itemBuilder: (_) => [PopupMenuItem(value: 'toggle', child: Text(q['active'] == true ? 'تعطيل' : 'تفعيل'))]),
+      onTap: () => _newQuestion(existing: q),
+      trailing: PopupMenuButton<String>(
+        onSelected: (v) async {
+          if (v == 'toggle') {
+            await GameCloudService.ownerSetQuestionActive('${q['id']}', q['active'] != true);
+            await _load();
+          } else if (v == 'edit') {
+            await _newQuestion(existing: q);
+          } else if (v == 'delete') {
+            final ok = await showDialog<bool>(
+              context: context,
+              builder: (dialogContext) => AlertDialog(
+                title: const Text('حذف السؤال؟'),
+                content: Text('سيتم حذف السؤال ${q['id']} من البنك السحابي.'),
+                actions: [
+                  TextButton(onPressed: () => Navigator.pop(dialogContext, false), child: const Text('إلغاء')),
+                  FilledButton(onPressed: () => Navigator.pop(dialogContext, true), child: const Text('حذف')),
+                ],
+              ),
+            );
+            if (ok == true) {
+              try {
+                await GameCloudService.ownerDeleteQuestion('${q['id']}');
+                await _load();
+              } catch (e) {
+                if (mounted) ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text('فشل الحذف: $e')));
+              }
+            }
+          }
+        },
+        itemBuilder: (_) => [
+          const PopupMenuItem(value: 'edit', child: Text('تعديل')),
+          PopupMenuItem(value: 'toggle', child: Text(q['active'] == true ? 'تعطيل' : 'تفعيل')),
+          const PopupMenuItem(value: 'delete', child: Text('حذف')),
+        ],
+      ),
     ))),
     if (questions.length > 250) const Padding(padding: EdgeInsets.all(16), child: Text('يتم عرض أول 250 سؤالًا لتجنب تحميل لوحة المالك بشكل ثقيل.')),
   ]);
 
-  Future<void> _newQuestion() async {
-    final id = TextEditingController(); final ayah = TextEditingController(); final word = TextEditingController(); final verse = TextEditingController(); final level = TextEditingController(text: '1'); final options = List.generate(4, (_) => TextEditingController());
-    final saved = await showDialog<bool>(context: context, builder: (_) => AlertDialog(title: const Text('إضافة سؤال'), content: SingleChildScrollView(child: Column(children: [TextField(controller: id, decoration: const InputDecoration(labelText: 'ID')), TextField(controller: verse, decoration: const InputDecoration(labelText: 'نص الآية')), TextField(controller: word, decoration: const InputDecoration(labelText: 'الكلمة المخفية')), TextField(controller: ayah, decoration: const InputDecoration(labelText: 'رقم الآية'), keyboardType: TextInputType.number), TextField(controller: level, decoration: const InputDecoration(labelText: 'المستوى 1-100'), keyboardType: TextInputType.number), ...options.asMap().entries.map((e) => TextField(controller: e.value, decoration: InputDecoration(labelText: 'الخيار ${e.key + 1}')))])), actions: [TextButton(onPressed: () => Navigator.pop(context, false), child: const Text('إلغاء')), FilledButton(onPressed: () => Navigator.pop(context, true), child: const Text('حفظ'))]));
+  Future<void> _newQuestion({Map<String, dynamic>? existing}) async {
+    final id = TextEditingController(text: '${existing?['id'] ?? ''}');
+    final verse = TextEditingController(text: '${existing?['full_ayah'] ?? ''}');
+    final word = TextEditingController(text: '${existing?['hidden_word'] ?? ''}');
+    final prompt = TextEditingController(text: '${existing?['question_text'] ?? ''}');
+    final level = TextEditingController(text: '${existing?['level'] ?? 1}');
+    final surahNumber = TextEditingController(text: '${existing?['surah_number'] ?? 1}');
+    final surahName = TextEditingController(text: '${existing?['surah_name'] ?? ''}');
+    final ayah = TextEditingController(text: '${existing?['ayah_number'] ?? 1}');
+    final sourceName = TextEditingController(text: '${existing?['source_name'] ?? ''}');
+    final sourceReference = TextEditingController(text: '${existing?['source_reference'] ?? ''}');
+    final contextText = TextEditingController(text: '${existing?['context_text'] ?? ''}');
+    final rawOptions = existing?['options'];
+    final options = List.generate(4, (i) => TextEditingController(
+      text: rawOptions is List && i < rawOptions.length ? '${rawOptions[i]}' : '',
+    ));
+    final correctAnswer = TextEditingController(text: '${existing?['correct_option'] ?? ''}');
+    String questionType = '${existing?['question_type'] ?? 'quran'}';
+    final saved = await showDialog<bool>(
+      context: context,
+      builder: (dialogContext) => StatefulBuilder(
+        builder: (dialogContext, setDialogState) => AlertDialog(
+          title: Text(existing == null ? 'إضافة سؤال' : 'تعديل السؤال'),
+          content: SizedBox(
+            width: 520,
+            child: SingleChildScrollView(
+              child: Column(children: [
+                DropdownButtonFormField<String>(
+                  value: questionType,
+                  decoration: const InputDecoration(labelText: 'نوع السؤال'),
+                  items: const [
+                    DropdownMenuItem(value: 'quran', child: Text('القرآن الكريم')),
+                    DropdownMenuItem(value: 'islamic', child: Text('ثقافة إسلامية')),
+                  ],
+                  onChanged: (value) {
+                    if (value != null) setDialogState(() => questionType = value);
+                  },
+                ),
+                TextField(controller: id, readOnly: existing != null, decoration: const InputDecoration(labelText: 'ID')),
+                if (questionType == 'quran') ...[
+                  TextField(controller: surahNumber, keyboardType: TextInputType.number, decoration: const InputDecoration(labelText: 'رقم السورة')),
+                  TextField(controller: surahName, decoration: const InputDecoration(labelText: 'اسم السورة')),
+                  TextField(controller: ayah, keyboardType: TextInputType.number, decoration: const InputDecoration(labelText: 'رقم الآية')),
+                  TextField(controller: verse, decoration: const InputDecoration(labelText: 'نص الآية')),
+                  TextField(controller: word, decoration: const InputDecoration(labelText: 'الكلمة المطلوبة')),
+                  TextField(controller: contextText, maxLines: 3, decoration: const InputDecoration(labelText: 'سياق الآيات (اختياري)')),
+                ] else
+                  TextField(controller: prompt, maxLines: 3, decoration: const InputDecoration(labelText: 'نص السؤال الديني')),
+                TextField(controller: level, keyboardType: TextInputType.number, decoration: const InputDecoration(labelText: 'المستوى 1-100')),
+                for (var i = 0; i < options.length; i++)
+                  TextField(controller: options[i], decoration: InputDecoration(labelText: 'الخيار ${i + 1}')),
+                TextField(controller: correctAnswer, decoration: const InputDecoration(labelText: 'الإجابة الصحيحة (يجب أن تطابق أحد الخيارات)')),
+                if (questionType == 'islamic') ...[
+                  TextField(controller: sourceName, decoration: const InputDecoration(labelText: 'المصدر')),
+                  TextField(controller: sourceReference, decoration: const InputDecoration(labelText: 'المرجع / رقم الحديث أو الآية')),
+                ],
+              ]),
+            ),
+          ),
+          actions: [
+            TextButton(onPressed: () => Navigator.pop(dialogContext, false), child: const Text('إلغاء')),
+            FilledButton(onPressed: () => Navigator.pop(dialogContext, true), child: const Text('حفظ')),
+          ],
+        ),
+      ),
+    );
     if (saved != true) return;
-    if (id.text.trim().isEmpty || verse.text.trim().isEmpty || word.text.trim().isEmpty || options.any((x) => x.text.trim().isEmpty)) return;
+    final opts = options.map((x) => x.text.trim()).toList();
+    final correct = questionType == 'quran' ? word.text.trim() : correctAnswer.text.trim();
+    final valid = id.text.trim().isNotEmpty &&
+        opts.every((x) => x.isNotEmpty) &&
+        opts.toSet().length == 4 &&
+        opts.contains(correct) &&
+        (questionType == 'quran'
+            ? verse.text.trim().isNotEmpty && word.text.trim().isNotEmpty && verse.text.contains(word.text.trim())
+            : prompt.text.trim().isNotEmpty && sourceName.text.trim().isNotEmpty && sourceReference.text.trim().isNotEmpty);
+    if (!valid) {
+      if (mounted) ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('راجع السؤال والاختيارات والإجابة والمصدر قبل الحفظ.')));
+      return;
+    }
     try {
-      final opts = options.map((x) => x.text.trim()).toList();
-      await GameCloudService.ownerUpsertQuestion({'id': id.text.trim(), 'surah_number': 1, 'surah_name': 'غير محدد', 'ayah_number': int.tryParse(ayah.text) ?? 1, 'full_ayah': verse.text.trim(), 'hidden_word': word.text.trim(), 'options': opts, 'correct_option': word.text.trim(), 'difficulty': 'easy', 'level': (int.tryParse(level.text) ?? 1).clamp(1, 100), 'active': true});
+      await GameCloudService.ownerUpsertQuestion({
+        'id': id.text.trim(),
+        'question_type': questionType,
+        'question_text': prompt.text.trim(),
+        'context_text': contextText.text.trim(),
+        'source_name': sourceName.text.trim(),
+        'source_reference': sourceReference.text.trim(),
+        'surah_number': questionType == 'quran' ? (int.tryParse(surahNumber.text) ?? 1) : 0,
+        'surah_name': questionType == 'quran' ? surahName.text.trim() : '',
+        'ayah_number': questionType == 'quran' ? (int.tryParse(ayah.text) ?? 1) : 0,
+        'full_ayah': questionType == 'quran' ? verse.text.trim() : '',
+        'hidden_word': questionType == 'quran' ? word.text.trim() : '',
+        'options': opts,
+        'correct_option': correct,
+        'difficulty': '${existing?['difficulty'] ?? 'easy'}',
+        'level': (int.tryParse(level.text) ?? 1).clamp(1, 100),
+        'active': existing?['active'] != false,
+      });
       await _load();
-    } catch (e) { if (mounted) ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text('فشل الحفظ: $e'))); }
+    } catch (e) {
+      if (mounted) ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text('فشل الحفظ: $e')));
+    }
   }
 
   Widget _daily() => ListView(padding: const EdgeInsets.all(12), children: [
