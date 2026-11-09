@@ -165,23 +165,47 @@ class QuranGameService {
 
   static QuranGameQuestion nextQuestion({int requestedLevel = 1}) {
     final safeLevel = requestedLevel.clamp(1, 100);
-    final pool = questions.where((q) => q.level == safeLevel).toList();
-    if (pool.isEmpty)
-      throw StateError('No question bank entries for level $safeLevel');
+    final base = _remoteQuestions ?? quranGameBank;
+    final quranPool = base
+        .where((q) => !q.isIslamicKnowledge && q.level == safeLevel)
+        .toList();
+    final knowledgePool = [
+      ...base.where((q) => q.isIslamicKnowledge),
+      ...islamicKnowledgeBank,
+    ]
+        .where((q) => q.isIslamicKnowledge)
+        .fold<Map<String, QuranGameQuestion>>(
+          <String, QuranGameQuestion>{},
+          (map, q) {
+            map[q.id] = q.withLevel(safeLevel);
+            return map;
+          },
+        )
+        .values
+        .toList();
     final seenThisLevel = (Store.json(
       'qgame_level_history',
       <dynamic>[],
-    ) as List)
-        .cast<String>()
-        .toSet();
-    final candidates =
-        pool.where((q) => !seenThisLevel.contains(q.id)).toList();
+    ) as List).cast<String>().toSet();
     final recent = history.take(4).toSet();
-    final fresh = (candidates.isEmpty ? pool : candidates)
-        .where((q) => !recent.contains(q.id))
+    final freshQuran = quranPool
+        .where((q) => !seenThisLevel.contains(q.id) && !recent.contains(q.id))
         .toList();
-    final source =
-        fresh.isNotEmpty ? fresh : (candidates.isNotEmpty ? candidates : pool);
+    final freshKnowledge = knowledgePool
+        .where((q) => !seenThisLevel.contains(q.id) && !recent.contains(q.id))
+        .toList();
+    final availableQuran = freshQuran.isNotEmpty
+        ? freshQuran
+        : quranPool.where((q) => !seenThisLevel.contains(q.id)).toList();
+    final availableKnowledge = freshKnowledge.isNotEmpty
+        ? freshKnowledge
+        : knowledgePool.where((q) => !seenThisLevel.contains(q.id)).toList();
+    final chooseKnowledge = availableKnowledge.isNotEmpty &&
+        (availableQuran.isEmpty || _random.nextBool());
+    final source = chooseKnowledge ? availableKnowledge : availableQuran;
+    if (source.isEmpty) {
+      throw StateError('No unused questions remain for level $safeLevel');
+    }
     return source[_random.nextInt(source.length)];
   }
 
