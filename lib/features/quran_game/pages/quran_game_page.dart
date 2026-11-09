@@ -1059,7 +1059,7 @@ class _QuranGameQuizPageState extends State<QuranGameQuizPage> {
       final ayahs = await QuranService.text(q.surahNumber);
       final currentIndex = ayahs.indexWhere((a) => a.n == q.ayahNumber);
       if (currentIndex < 0) return;
-      final words = q.fullAyah.trim().split(RegExp(r'\\s+'));
+      final words = q.fullAyah.trim().split(RegExp(r'\s+'));
       String context;
       if (words.length <= 12) {
         final parts = <String>[];
