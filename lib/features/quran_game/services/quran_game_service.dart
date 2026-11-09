@@ -103,7 +103,7 @@ class QuranGameService {
       ];
   static int get maximumAvailableLevel => questions.isEmpty
       ? 0
-      : questions.map((q) => q.level).reduce(max).clamp(1, 100).toInt();
+      : questions.map((q) => q.level).reduce((a, b) => a > b ? a : b).clamp(1, 100).toInt();
   static int get currentLevelQuestionCount => questionsForLevel(level);
   static int get quranQuestionPercent => Store.integer('qgame_quran_mix', 50).clamp(0, 100).toInt();
   static bool get levelCompleted => Store.flag('qgame_level_completed_$level');
