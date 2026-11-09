@@ -100,13 +100,21 @@ class GameCloudService {
 
   static Future<List<Map<String, dynamic>>> fetchQuestions() async {
     if (!enabled) return const [];
-    final rows = await client
-        .from('game_questions')
-        .select('id,surah_number,surah_name,ayah_number,full_ayah,hidden_word,options,correct_option,difficulty,level,recitation_audio,global_ayah_number,explanation,question_type,question_text,context_text,source_name,source_reference')
-        .eq('active', true)
-        .order('level')
-        .order('id');
-    return List<Map<String, dynamic>>.from(rows);
+    const pageSize = 500;
+    final result = <Map<String, dynamic>>[];
+    for (var start = 0;; start += pageSize) {
+      final rows = await client
+          .from('game_questions')
+          .select('id,surah_number,surah_name,ayah_number,full_ayah,hidden_word,options,correct_option,difficulty,level,recitation_audio,global_ayah_number,explanation,question_type,question_text,context_text,source_name,source_reference')
+          .eq('active', true)
+          .order('level')
+          .order('id')
+          .range(start, start + pageSize - 1);
+      final page = List<Map<String, dynamic>>.from(rows);
+      result.addAll(page);
+      if (page.length < pageSize) break;
+    }
+    return result;
   }
 
   static Future<int> fetchQuestionMix() async {
@@ -186,10 +194,20 @@ class GameCloudService {
 
   static Future<List<Map<String, dynamic>>> ownerQuestions({int? level}) async {
     if (!enabled || !await CloudService.isOwner()) throw Exception('Owner access required');
-    var q = client.from('game_questions').select('*');
-    if (level != null) q = q.eq('level', level);
-    final rows = await q.order('level').order('id');
-    return List<Map<String, dynamic>>.from(rows);
+    const pageSize = 500;
+    final result = <Map<String, dynamic>>[];
+    for (var start = 0;; start += pageSize) {
+      var query = client.from('game_questions').select('*');
+      if (level != null) query = query.eq('level', level);
+      final rows = await query
+          .order('level')
+          .order('id')
+          .range(start, start + pageSize - 1);
+      final page = List<Map<String, dynamic>>.from(rows);
+      result.addAll(page);
+      if (page.length < pageSize) break;
+    }
+    return result;
   }
 
   static Future<void> ownerUpsertQuestion(Map<String, dynamic> data) async {
