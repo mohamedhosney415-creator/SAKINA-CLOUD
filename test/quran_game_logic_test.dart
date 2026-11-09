@@ -62,6 +62,19 @@ void main() {
     expect(QuranGameService.totalQuestions, 1);
   });
 
+  test('daily challenge stays available after all current-level questions are used', () async {
+    final levelQuestions = quranGameBank.where((q) => q.level == 1).take(3);
+    for (final question in levelQuestions) {
+      await QuranGameService.answer(question, true);
+    }
+    expect(await QuranGameService.completeLevelIfReady(), isTrue);
+    final dailyQuestion = QuranGameService.nextQuestion(
+      requestedLevel: QuranGameService.level,
+      daily: true,
+    );
+    expect(dailyQuestion.options, contains(dailyQuestion.correctOption));
+  });
+
   test(
     'three correct answers complete level one but wait for explicit continuation',
     () async {
