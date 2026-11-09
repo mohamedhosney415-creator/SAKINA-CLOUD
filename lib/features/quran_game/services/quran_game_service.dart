@@ -98,8 +98,8 @@ class QuranGameService {
     } catch (_) {}
   }
   static List<QuranGameQuestion> get questions => [
-        ...(_remoteQuestions ?? quranGameBank),
         ...islamicKnowledgeBank,
+        ...(_remoteQuestions ?? quranGameBank),
       ];
   static int get maximumAvailableLevel => questions.isEmpty
       ? 0
