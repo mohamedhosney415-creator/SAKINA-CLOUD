@@ -189,9 +189,16 @@ class QuranGameService {
   static bool get dailyDone => Store.str('qgame_daily_done') == todayKey;
   static int get longestStreakSafe => max(longestStreak, streak);
 
-  static QuranGameQuestion nextQuestion({int requestedLevel = 1}) {
+  static QuranGameQuestion nextQuestion({int requestedLevel = 1, bool daily = false}) {
     final safeLevel = requestedLevel.clamp(1, 100).toInt();
     final base = _remoteQuestions ?? quranGameBank;
+    if (daily) {
+      final allQuestions = questions;
+      final recentQuestions = history.take(4).toSet();
+      final freshDaily = allQuestions.where((q) => !recentQuestions.contains(q.id)).toList();
+      final dailyPool = freshDaily.isNotEmpty ? freshDaily : allQuestions;
+      return dailyPool[_random.nextInt(dailyPool.length)];
+    }
     final quranPool = base
         .where((q) => !q.isIslamicKnowledge && q.level == safeLevel)
         .toList();
