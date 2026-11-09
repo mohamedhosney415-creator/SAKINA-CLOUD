@@ -107,6 +107,7 @@ class QuranGameService {
   static int get currentLevelQuestionCount => questionsForLevel(level);
   static int get quranQuestionPercent => Store.integer('qgame_quran_mix', 50).clamp(0, 100);
   static bool get levelCompleted => Store.flag('qgame_level_completed_$level');
+  static bool isLevelCompleted(int value) => Store.flag('qgame_level_completed_$value');
   static int starsForLevel(int value) {
     final map = Store.json('qgame_level_stars', <String, dynamic>{});
     if (map is! Map) return 0;
