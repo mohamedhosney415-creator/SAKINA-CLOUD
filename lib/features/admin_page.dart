@@ -143,7 +143,7 @@ class _AdminPageState extends State<AdminPage> {
     ...questions.take(250).map((q) => Card(child: ListTile(
       title: Text('${q['id']} • Level ${q['level']} • ${q['question_type'] == 'islamic' ? 'ثقافة إسلامية' : 'قرآن'}'),
       subtitle: Text(q['question_type'] == 'islamic'
-          ? '${q['question_text']}\nالمصدر: ${q['source_name'] ?? ''} • ${q['source_reference'] ?? ''}'
+          ? '${q['question_text']}\nالمصدر: ${q['source_name'] ?? ''} • ${q['source_reference'] ?? ''}\n${q['active'] == true ? 'منشور ومعتمد' : 'مسودة — تحتاج مراجعة واعتماد'}'
           : '${q['surah_name']} ${q['ayah_number']} • ${q['difficulty']}\n${q['full_ayah']}'),
       isThreeLine: true,
       onTap: () => _newQuestion(existing: q),
