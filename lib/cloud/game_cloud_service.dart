@@ -136,6 +136,7 @@ class GameCloudService {
       'updated_at': DateTime.now().toUtc().toIso8601String(),
       'updated_by': client.auth.currentUser!.id,
     }, onConflict: 'setting_key');
+    await Store.setInt('qgame_quran_mix', quran);
   }
 
   static Future<Map<String, dynamic>?> dailyChallenge(String dateKey) async {
