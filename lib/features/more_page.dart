@@ -48,7 +48,6 @@ class _MorePageState extends State<MorePage> {
   final TextEditingController _search = TextEditingController();
 
   @override
-  @override
   void initState() {
     super.initState();
     CloudService.isOwner().then((value) {
@@ -64,7 +63,7 @@ class _MorePageState extends State<MorePage> {
 
   List<_MoreGroup> _groups() => [
         _MoreGroup('القرآن والمكتبة', [
-          _MoreItem('أكمل الآية', 'اختبر ذاكرتك القرآنية واجمع نورًا',
+          _MoreItem('اختبار سكينة الإسلامي', 'اختبر ذاكرتك القرآنية واجمع نورًا',
               Icons.auto_stories_rounded, const QuranGamePage()),
           _MoreItem('البحث الشامل', 'ابحث في القرآن والأذكار من مكان واحد',
               Icons.search_rounded, const GlobalSearchPage()),
