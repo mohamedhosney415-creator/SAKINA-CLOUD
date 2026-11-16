@@ -135,7 +135,9 @@ void main() {
   );
 
   test('streak reward is credited once per local day', () async {
-    await QuranGameService.answer(quranGameBank.first, true, daily: true);
+    for (final q in quranGameBank.take(QuranGameConfig.dailyQuestions)) {
+      await QuranGameService.answer(q, true, daily: true);
+    }
     final reward = await QuranGameService.completeDaily();
     expect(reward, greaterThanOrEqualTo(QuranGameConfig.dailyBonus));
     final balance = QuranGameService.noor;
