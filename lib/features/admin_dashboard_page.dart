@@ -229,7 +229,29 @@ class _AdminDashboardPageState extends State<AdminDashboardPage> {
               ),
               subtitle: Text('${u['email'] ?? 'بدون بريد'}\nآخر نشاط: ${_date(u['last_seen_at'])}'),
               isThreeLine: true,
-              trailing: Chip(label: Text(role == 'owner' ? 'مالك' : 'مستخدم')),
+              trailing: role == 'owner'
+                  ? const Chip(label: Text('مالك'))
+                  : PopupMenuButton<String>(
+                      onSelected: (action) async {
+                        try {
+                          if (action == 'message') {
+                            await _messageUser(u);
+                          } else if (action == 'block') {
+                            await CloudService.blockUser('${u['id']}', reason: 'حظر من المالك');
+                          } else if (action == 'unblock') {
+                            await CloudService.unblockUser('${u['id']}');
+                          }
+                          await _load();
+                        } catch (_) {
+                          if (mounted) ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('تعذر تنفيذ العملية.')));
+                        }
+                      },
+                      itemBuilder: (_) => const [
+                        PopupMenuItem(value: 'message', child: Text('إرسال رسالة')),
+                        PopupMenuItem(value: 'block', child: Text('حظر المستخدم')),
+                        PopupMenuItem(value: 'unblock', child: Text('إلغاء الحظر')),
+                      ],
+                    ),
             ),
           ),
         );
@@ -280,6 +302,28 @@ class _AdminDashboardPageState extends State<AdminDashboardPage> {
     );
   }
 
+  Future<void> _messageUser(Map<String, dynamic> user) async {
+    final title = TextEditingController(text: 'رسالة من سكينة');
+    final body = TextEditingController();
+    final ok = await showDialog<bool>(
+      context: context,
+      builder: (_) => AlertDialog(
+        title: Text('رسالة إلى ${user['display_name'] ?? user['email'] ?? 'المستخدم'}'),
+        content: Column(mainAxisSize: MainAxisSize.min, children: [
+          TextField(controller: title, decoration: const InputDecoration(labelText: 'العنوان')),
+          TextField(controller: body, maxLines: 5, decoration: const InputDecoration(labelText: 'الرسالة')),
+        ]),
+        actions: [
+          TextButton(onPressed: () => Navigator.pop(context, false), child: const Text('إلغاء')),
+          FilledButton(onPressed: () => Navigator.pop(context, true), child: const Text('إرسال')),
+        ],
+      ),
+    );
+    if (ok == true && body.text.trim().isNotEmpty) {
+      await CloudService.sendMessage(recipientId: '${user['id']}', title: title.text.trim(), body: body.text.trim());
+    }
+    title.dispose(); body.dispose();
+  }
   String _date(dynamic value) {
     if (value == null || '$value'.trim().isEmpty) return 'غير متاح';
     try {
