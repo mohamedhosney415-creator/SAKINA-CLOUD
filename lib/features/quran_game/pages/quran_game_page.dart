@@ -445,7 +445,7 @@ class _QuranGamePageState extends State<QuranGamePage> {
                 2,
                 Icons.auto_awesome_rounded,
                 'خطوة جديدة',
-                '6 من 10 أسئلة مكتملة',
+                '${QuranGameService.questionsAnsweredInCurrentLevel} من ${QuranGameConfig.questionsPerLevelFor(QuranGameService.level)} أسئلة مكتملة',
                 true,
                 current: true,
               ),
@@ -1168,7 +1168,7 @@ class _QuranGameQuizPageState extends State<QuranGameQuizPage> {
                     ? (QuranGameService.dailyDone
                         ? 'اكتمل تحدي اليوم'
                         : 'تحدي من ${QuranGameConfig.dailyQuestions} أسئلة • مرة واحدة يوميًا')
-                    : 'سؤال ${min(count + (answered ? 0 : 1), 10)} من 10',
+                    : 'سؤال ${min(count + (answered ? 0 : 1), QuranGameConfig.questionsPerLevelFor(QuranGameService.level))} من ${QuranGameConfig.questionsPerLevelFor(QuranGameService.level)}',
                 style: const TextStyle(fontWeight: FontWeight.w800),
               ),
               Text(
@@ -1184,7 +1184,7 @@ class _QuranGameQuizPageState extends State<QuranGameQuizPage> {
           LinearProgressIndicator(
             value: widget.daily
                 ? (QuranGameService.dailyDone ? 1 : 0)
-                : count / 10,
+                : count / QuranGameConfig.questionsPerLevelFor(QuranGameService.level),
           ),
           const SizedBox(height: 24),
           Panel(
