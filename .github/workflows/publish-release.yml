@@ -10,7 +10,6 @@ permissions:
   actions: read
   contents: write
 
-# Prevent two successful builds from publishing at the same time.
 concurrency:
   group: sakina-release-publish
   cancel-in-progress: false
@@ -39,16 +38,25 @@ jobs:
         id: meta
         shell: bash
         run: |
-          VERSION="$(sed -n 's/^version:[[:space:]]*//p' pubspec.yaml | head -n 1 | tr -d '\r')"
+          VERSION="$(awk -F: '/^version:/ {gsub(/[[:space:]]/, "", $2); print $2; exit}' pubspec.yaml)"
           if [ -z "$VERSION" ]; then
             echo "Could not read version from pubspec.yaml"
             exit 1
           fi
+
           SAFE_VERSION="${VERSION//+/-}"
-          TAG="v${SAFE_VERSION}-build.${{ github.event.workflow_run.run_number }}"
-          test -s release-assets/app-release.apk
-          echo "version=$VERSION" >> "$GITHUB_OUTPUT"
-          echo "tag=$TAG" >> "$GITHUB_OUTPUT"
+          TAG="v${SAFE_VERSION}-build-${{ github.event.workflow_run.run_number }}"
+
+          if [ ! -s "release-assets/app-release.apk" ]; then
+            echo "APK artifact is missing or empty"
+            exit 1
+          fi
+
+          {
+            echo "version=$VERSION"
+            echo "tag=$TAG"
+          } >> "$GITHUB_OUTPUT"
+
           echo "Publishing $TAG from build #${{ github.event.workflow_run.run_number }}"
 
       - name: Publish APK release
