@@ -1,6 +1,8 @@
 import 'package:flutter/material.dart';
 import '../core/theme.dart';
 import '../core/widgets.dart';
+import '../cloud/cloud_service.dart';
+import 'admin_dashboard_page.dart';
 import 'about_page.dart';
 import 'account_page.dart';
 import 'calendar_page.dart';
@@ -42,7 +44,17 @@ class MorePage extends StatefulWidget {
 
 class _MorePageState extends State<MorePage> {
   String query = '';
+  bool _isOwner = false;
   final TextEditingController _search = TextEditingController();
+
+  @override
+  @override
+  void initState() {
+    super.initState();
+    CloudService.isOwner().then((value) {
+      if (mounted) setState(() => _isOwner = value);
+    });
+  }
 
   @override
   void dispose() {
@@ -90,6 +102,9 @@ class _MorePageState extends State<MorePage> {
         _MoreGroup('الحساب والتطبيق', [
           _MoreItem('حساب سكينة', 'تسجيل الدخول والمزامنة السحابية',
               Icons.account_circle_rounded, const AccountPage()),
+          if (_isOwner)
+            _MoreItem('لوحة المالك', 'إحصائيات المستخدمين وإدارة محتوى اللعبة',
+                Icons.admin_panel_settings_rounded, const AdminDashboardPage()),
           _MoreItem('الإعدادات', 'الأذان والمدينة والمظهر والنسخ الاحتياطي',
               Icons.settings_rounded, const SettingsPage()),
           _MoreItem('عن التطبيق', 'معلومات الإصدار والمصادر',
