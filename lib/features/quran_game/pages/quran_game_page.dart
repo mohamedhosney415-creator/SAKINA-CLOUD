@@ -1093,7 +1093,10 @@ class _QuranGameQuizPageState extends State<QuranGameQuizPage> {
       showHint = false;
       choices = null;
       hasSecondChance = false;
+      previousAyah = null;
+      nextAyah = null;
     });
+    _loadAdjacentAyahs();
   }
 
   Future<void> _hint() async {
@@ -1211,16 +1214,23 @@ class _QuranGameQuizPageState extends State<QuranGameQuizPage> {
                   ),
                 ),
                 const SizedBox(height: 18),
-                Text(
-                  answered || !q.isCompleteWord ? q.fullAyah : q.maskedAyah,
+                if (previousAyah != null) ...[
+                  Text('الآية السابقة', style: TextStyle(color: Theme.of(context).colorScheme.onSurface.withAlpha(110), fontSize: 10, fontWeight: FontWeight.w800)),
+                  const SizedBox(height: 4),
+                  Text.rich(_quranText(previousAyah!, 17, Colors.white70), textAlign: TextAlign.center, textDirection: TextDirection.rtl),
+                  const SizedBox(height: 14),
+                ],
+                Text.rich(
+                  _quranText(answered || !q.isCompleteWord ? q.fullAyah : q.maskedAyah, 29, Colors.white),
                   textAlign: TextAlign.center,
                   textDirection: TextDirection.rtl,
-                  style: const TextStyle(
-                    fontSize: 27,
-                    height: 1.9,
-                    fontWeight: FontWeight.w700,
-                  ),
                 ),
+                if (nextAyah != null) ...[
+                  const SizedBox(height: 14),
+                  Text('الآية التالية', style: TextStyle(color: Theme.of(context).colorScheme.onSurface.withAlpha(110), fontSize: 10, fontWeight: FontWeight.w800)),
+                  const SizedBox(height: 4),
+                  Text.rich(_quranText(nextAyah!, 17, Colors.white70), textAlign: TextAlign.center, textDirection: TextDirection.rtl),
+                ],
                 if (showHint) ...[
                   const SizedBox(height: 8),
                   Text(
