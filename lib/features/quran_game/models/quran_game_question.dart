@@ -61,6 +61,26 @@ class QuranGameQuestion {
     }
   }
 
+  QuranGameQuestion copyWith({int? level}) => QuranGameQuestion(
+        id: id,
+        surahNumber: surahNumber,
+        surahName: surahName,
+        ayahNumber: ayahNumber,
+        fullAyah: fullAyah,
+        hiddenWord: hiddenWord,
+        options: options,
+        correctOption: correctOption,
+        difficulty: difficulty,
+        level: level ?? this.level,
+        recitationAudio: recitationAudio,
+        globalAyahNumber: globalAyahNumber,
+        explanation: explanation,
+        questionType: questionType,
+        category: category,
+        prompt: prompt,
+        xp: xp,
+      );
+
   Map<String, dynamic> toJson() => {
         'id': id,
         'surahNumber': surahNumber,
