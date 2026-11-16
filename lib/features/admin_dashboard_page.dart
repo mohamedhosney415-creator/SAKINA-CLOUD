@@ -53,8 +53,8 @@ class _AdminDashboardPageState extends State<AdminDashboardPage> {
   @override
   Widget build(BuildContext context) {
     if (loading) {
-      return const Scaffold(
-        appBar: AppBar(title: Text('لوحة المالك')),
+      return Scaffold(
+        appBar: AppBar(title: const Text('لوحة المالك')),
         body: Center(child: CircularProgressIndicator()),
       );
     }
