@@ -115,6 +115,18 @@ class _SakinaAppState extends State<SakinaApp> with WidgetsBindingObserver {
   }
 }
 
+class BlockGate extends StatelessWidget {
+  const BlockGate({super.key});
+  @override Widget build(BuildContext context) => FutureBuilder<bool>(
+    future: CloudService.isBlocked(),
+    builder: (context, snap) {
+      if (!snap.hasData) return const Scaffold(body: Center(child: CircularProgressIndicator()));
+      if (snap.data == true) return Scaffold(appBar: AppBar(title: const Text('الحساب محظور')),body: const Center(child: Padding(padding: EdgeInsets.all(28),child: Text('تم حظر هذا الحساب من قبل مالك SAKINA. تواصل مع المالك إذا كنت تعتقد أن هذا حدث بالخطأ.',textAlign: TextAlign.center,style: TextStyle(fontSize: 16,height: 1.8)))));
+      return const Shell();
+    },
+  );
+}
+
 class Shell extends StatefulWidget {
   const Shell({super.key});
   @override
@@ -212,7 +224,7 @@ class CloudGate extends StatelessWidget {
     return StreamBuilder<AuthState>(
       stream: CloudService.client.auth.onAuthStateChange,
       builder: (context, snap) {
-        if (CloudService.user != null) return const Shell();
+        if (CloudService.user != null) return const BlockGate();
         return const AuthPage();
       },
     );
