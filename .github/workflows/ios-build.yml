@@ -1,0 +1,79 @@
+name: Build SAKINA iOS (unsigned)
+
+on:
+  push:
+    branches: [main]
+    paths:
+      - 'lib/**'
+      - 'assets/**'
+      - 'pubspec.yaml'
+      - 'tool/**'
+      - '.github/workflows/ios-build.yml'
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  build-ios:
+    runs-on: macos-15
+    timeout-minutes: 60
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: subosito/flutter-action@v2
+        with:
+          channel: stable
+          cache: true
+
+      - name: Generate iOS project
+        run: flutter create --org com.hosny --project-name sakina --platforms=ios .
+
+      - name: Configure iOS app metadata and background audio
+        run: |
+          python3 - <<'PY'
+          import plistlib
+          from pathlib import Path
+          p = Path('ios/Runner/Info.plist')
+          with p.open('rb') as f:
+              data = plistlib.load(f)
+          data['CFBundleDisplayName'] = 'سكينة'
+          data['UIBackgroundModes'] = sorted(set(data.get('UIBackgroundModes', []) + ['audio', 'fetch', 'remote-notification']))
+          data['UISupportsDocumentBrowser'] = True
+          data['LSSupportsOpeningDocumentsInPlace'] = True
+          with p.open('wb') as f:
+              plistlib.dump(data, f)
+          PY
+
+      - name: Install Flutter packages
+        run: flutter pub get
+
+      - name: Run tests
+        run: flutter test
+
+      - name: Analyze Dart code
+        run: flutter analyze --no-fatal-infos --no-fatal-warnings
+
+      - name: Build iOS app (unsigned)
+        env:
+          SUPABASE_URL: ${{ secrets.SUPABASE_URL }}
+          SUPABASE_PUBLISHABLE_KEY: ${{ secrets.SUPABASE_PUBLISHABLE_KEY }}
+        run: |
+          if [ -n "$SUPABASE_URL" ] && [ -n "$SUPABASE_PUBLISHABLE_KEY" ]; then
+            flutter build ios --release --no-codesign \
+              --dart-define=SUPABASE_URL="$SUPABASE_URL" \
+              --dart-define=SUPABASE_PUBLISHABLE_KEY="$SUPABASE_PUBLISHABLE_KEY"
+          elif [ -z "$SUPABASE_URL" ] && [ -z "$SUPABASE_PUBLISHABLE_KEY" ]; then
+            echo "Supabase secrets are not set; building without cloud configuration."
+            flutter build ios --release --no-codesign
+          else
+            echo "Set both SUPABASE_URL and SUPABASE_PUBLISHABLE_KEY, or leave both unset."
+            exit 1
+          fi
+
+      - name: Upload unsigned iOS app
+        uses: actions/upload-artifact@v4
+        with:
+          name: SAKINA-iOS-unsigned
+          path: build/ios/iphoneos/Runner.app
+          if-no-files-found: error
