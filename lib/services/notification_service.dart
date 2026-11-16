@@ -221,9 +221,9 @@ class NotificationService {
       notificationsPlugin.resolvePlatformSpecificImplementation<
           AndroidFlutterLocalNotificationsPlugin>();
 
-  static DarwinFlutterLocalNotificationsPlugin? get _darwin =>
+  static IOSFlutterLocalNotificationsPlugin? get _darwin =>
       notificationsPlugin.resolvePlatformSpecificImplementation<
-          DarwinFlutterLocalNotificationsPlugin>();
+          IOSFlutterLocalNotificationsPlugin>();
 
   static Future<bool> notificationsAllowed() async {
     if (Platform.isIOS) return true;
@@ -279,7 +279,7 @@ class NotificationService {
     const raw = 'sakina_adhan';
     final channel = 'sakina_full_adhan_v2_${vib ? 'v' : 'n'}';
     return NotificationDetails(
-      darwin: const DarwinNotificationDetails(
+      iOS: const DarwinNotificationDetails(
         presentAlert: true,
         presentBadge: true,
         presentSound: true,
@@ -307,7 +307,7 @@ class NotificationService {
 
   static NotificationDetails _reminderDetails(String body) =>
       NotificationDetails(
-        darwin: const DarwinNotificationDetails(
+        iOS: const DarwinNotificationDetails(
         presentAlert: true,
         presentBadge: true,
         presentSound: true,
@@ -324,7 +324,7 @@ class NotificationService {
 
   static NotificationDetails _generalDetails(String body) =>
       NotificationDetails(
-        darwin: const DarwinNotificationDetails(
+        iOS: const DarwinNotificationDetails(
         presentAlert: true,
         presentBadge: true,
         presentSound: true,
@@ -341,7 +341,7 @@ class NotificationService {
 
   static NotificationDetails _dailyMessageDetails(String body) =>
       NotificationDetails(
-        darwin: const DarwinNotificationDetails(
+        iOS: const DarwinNotificationDetails(
         presentAlert: true,
         presentBadge: true,
         presentSound: true,
@@ -357,7 +357,7 @@ class NotificationService {
       );
 
   static NotificationDetails _noorDetails(String body) => NotificationDetails(
-        darwin: const DarwinNotificationDetails(
+        iOS: const DarwinNotificationDetails(
         presentAlert: true,
         presentBadge: true,
         presentSound: true,
@@ -373,7 +373,7 @@ class NotificationService {
       );
 
   static NotificationDetails _streakDetails(String body) => NotificationDetails(
-        darwin: const DarwinNotificationDetails(
+        iOS: const DarwinNotificationDetails(
         presentAlert: true,
         presentBadge: true,
         presentSound: true,
@@ -390,7 +390,7 @@ class NotificationService {
 
   static NotificationDetails _personalReminderDetails(String body) =>
       NotificationDetails(
-        darwin: const DarwinNotificationDetails(
+        iOS: const DarwinNotificationDetails(
         presentAlert: true,
         presentBadge: true,
         presentSound: true,
