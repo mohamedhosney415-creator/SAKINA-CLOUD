@@ -10,6 +10,11 @@ permissions:
   actions: read
   contents: write
 
+# Prevent two successful builds from publishing at the same time.
+concurrency:
+  group: sakina-release-publish
+  cancel-in-progress: false
+
 jobs:
   publish:
     if: >-
@@ -26,7 +31,6 @@ jobs:
           run-id: ${{ github.event.workflow_run.id }}
 
       - name: Read app version
-        id: version
         uses: actions/checkout@v4
         with:
           ref: ${{ github.event.workflow_run.head_sha }}
@@ -42,16 +46,22 @@ jobs:
           fi
           SAFE_VERSION="${VERSION//+/-}"
           TAG="v${SAFE_VERSION}-build.${{ github.event.workflow_run.run_number }}"
+          test -s release-assets/app-release.apk
           echo "version=$VERSION" >> "$GITHUB_OUTPUT"
           echo "tag=$TAG" >> "$GITHUB_OUTPUT"
+          echo "Publishing $TAG from build #${{ github.event.workflow_run.run_number }}"
 
-      - name: Publish APK as the latest GitHub release
-        env:
-          GH_TOKEN: ${{ github.token }}
-        run: |
-          test -s release-assets/app-release.apk
-          gh release create "${{ steps.meta.outputs.tag }}" \
-            release-assets/app-release.apk \
-            --repo "${{ github.repository }}" \
-            --title "SAKINA ${{ steps.meta.outputs.version }}" \
-            --notes "نسخة SAKINA المبنية بنجاح من GitHub Actions.\nBuild: #${{ github.event.workflow_run.run_number }}\nCommit: ${{ github.event.workflow_run.head_sha }}"
+      - name: Publish APK release
+        uses: softprops/action-gh-release@v2
+        with:
+          token: ${{ secrets.GITHUB_TOKEN }}
+          tag_name: ${{ steps.meta.outputs.tag }}
+          target_commitish: ${{ github.event.workflow_run.head_sha }}
+          name: SAKINA ${{ steps.meta.outputs.version }} (Build #${{ github.event.workflow_run.run_number }})
+          body: |
+            نسخة SAKINA المبنية بنجاح من GitHub Actions.
+            Build: #${{ github.event.workflow_run.run_number }}
+            Commit: ${{ github.event.workflow_run.head_sha }}
+          files: release-assets/app-release.apk
+          fail_on_unmatched_files: true
+          make_latest: true
