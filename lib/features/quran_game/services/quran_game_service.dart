@@ -63,7 +63,7 @@ class QuranGameService {
                 q.level <= 100 &&
                 q.options.length == 4 &&
                 q.options.contains(q.correctOption) &&
-                q.fullAyah.contains(q.hiddenWord))
+                q.questionType.trim().isNotEmpty)
             .toList(growable: false);
       }
     } catch (_) {
@@ -184,8 +184,9 @@ class QuranGameService {
     if (q.level < 1 ||
         q.level > 100 ||
         q.options.length != 4 ||
+        q.correctOption.trim().isEmpty ||
         !q.options.contains(q.correctOption) ||
-        !q.fullAyah.contains(q.hiddenWord)) {
+        q.questionType.trim().isEmpty) {
       throw ArgumentError('Invalid Quran game question');
     }
     if (!daily && q.level != level)
