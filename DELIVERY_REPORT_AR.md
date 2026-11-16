@@ -12,6 +12,7 @@
 - تنظيم ملفات Supabase migrations بأسماء وإصدارات متوافقة.
 - إضافة اختبار موضع اللعبة في شريط التنقل.
 - إضافة اختيار نمط عرض القرآن داخل صفحة القراءة، مع ثلاثة أنماط محفوظة محليًا: العرض المتصل، بطاقة مستقلة لكل آية، والقراءة المريحة ذات التباعد الأكبر.
+- تجهيز Workflow مستقل لـiOS على macOS، مع بناء `Runner.app` غير موقعة، وحماية استدعاءات Android الخاصة عند تشغيل التطبيق على iPhone.
 
 ## الملفات المعدلة
 
@@ -24,6 +25,10 @@
 - `lib/features/quran_game/services/quran_game_service.dart`
 - `lib/features/readiness_page.dart`
 - `lib/features/reader_page.dart`
+- `lib/features/adhan_settings_page.dart`
+- `lib/services/widget_sync.dart`
+- `.github/workflows/ios.yml`
+- `IOS_SETUP_AR.md`
 - `test/quran_game_logic_test.dart`
 - `test/sakina_nav_bar_test.dart`
 - `supabase/migrations/20261110000102_game_cloud_v1.sql`

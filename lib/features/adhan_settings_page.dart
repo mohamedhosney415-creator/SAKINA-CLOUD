@@ -1,3 +1,4 @@
+import 'dart:io';
 import 'package:android_intent_plus/android_intent.dart';
 import 'package:flutter_local_notifications/flutter_local_notifications.dart';
 import 'package:flutter/material.dart';
@@ -71,6 +72,10 @@ class _AdhanSettingsPageState extends State<AdhanSettingsPage> {
   }
 
   Future<void> _open(String action, {Map<String, dynamic>? args}) async {
+    if (!Platform.isAndroid) {
+      if (mounted) toast(context, 'هذا الإعداد متاح على Android فقط');
+      return;
+    }
     try {
       await AndroidIntent(action: action, arguments: args).launch();
     } catch (_) {

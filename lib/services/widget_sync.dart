@@ -1,3 +1,4 @@
+import 'dart:io';
 import 'package:home_widget/home_widget.dart';
 import '../core/format.dart';
 import '../core/settings.dart';
@@ -31,7 +32,9 @@ class WidgetSync {
         final read = KhatmaStore.readOn(plan, today);
         await HomeWidget.saveWidgetData<String>('wird_today', '$target,$read');
       }
-      await HomeWidget.updateWidget(androidName: 'SakinaWidgetProvider');
+      if (Platform.isAndroid) {
+        await HomeWidget.updateWidget(androidName: 'SakinaWidgetProvider');
+      }
     } catch (_) {}
   }
 }

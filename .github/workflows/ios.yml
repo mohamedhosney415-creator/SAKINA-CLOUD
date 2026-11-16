@@ -1,0 +1,43 @@
+name: Build SAKINA iOS
+
+on:
+  push:
+    branches: [main, master, feature/sakina-5-upgrade]
+  workflow_dispatch:
+
+jobs:
+  validate-and-build:
+    runs-on: macos-latest
+    timeout-minutes: 45
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: subosito/flutter-action@v2
+        with:
+          channel: stable
+          cache: true
+
+      - name: Flutter version
+        run: flutter --version
+
+      - name: Generate iOS project
+        run: flutter create --org com.hosny --project-name sakina --platforms=ios .
+
+      - name: Get packages
+        run: flutter pub get
+
+      - name: Run regression tests
+        run: flutter test
+
+      - name: Analyze Dart code
+        run: flutter analyze --no-fatal-infos --no-fatal-warnings
+
+      # This validates the iOS compilation without requiring Apple signing secrets.
+      - name: Build unsigned iOS app
+        run: flutter build ios --release --no-codesign
+
+      - name: Upload unsigned iOS app
+        uses: actions/upload-artifact@v4
+        with:
+          name: SAKINA-ios-unsigned
+          path: build/ios/iphoneos/Runner.app
