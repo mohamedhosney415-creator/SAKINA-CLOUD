@@ -102,7 +102,7 @@ class GameCloudService {
     if (!enabled) return const [];
     final rows = await client
         .from('game_questions')
-        .select('id,surah_number,surah_name,ayah_number,full_ayah,hidden_word,options,correct_option,difficulty,level,recitation_audio,global_ayah_number,explanation')
+        .select('id,surah_number,surah_name,ayah_number,full_ayah,hidden_word,options,correct_option,difficulty,level,recitation_audio,global_ayah_number,explanation,question_type,category,prompt,xp')
         .eq('active', true)
         .order('level')
         .order('id');
