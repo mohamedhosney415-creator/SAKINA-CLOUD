@@ -1,0 +1,57 @@
+name: Publish SAKINA release
+
+on:
+  workflow_run:
+    workflows: ["Build SAKINA APK"]
+    types: [completed]
+    branches: [main]
+
+permissions:
+  actions: read
+  contents: write
+
+jobs:
+  publish:
+    if: >-
+      ${{ github.event.workflow_run.conclusion == 'success' &&
+          github.event.workflow_run.head_branch == 'main' }}
+    runs-on: ubuntu-latest
+    steps:
+      - name: Download APK artifact from successful build
+        uses: actions/download-artifact@v4
+        with:
+          name: SAKINA-apk
+          path: release-assets
+          github-token: ${{ secrets.GITHUB_TOKEN }}
+          run-id: ${{ github.event.workflow_run.id }}
+
+      - name: Read app version
+        id: version
+        uses: actions/checkout@v4
+        with:
+          ref: ${{ github.event.workflow_run.head_sha }}
+
+      - name: Prepare release metadata
+        id: meta
+        shell: bash
+        run: |
+          VERSION="$(sed -n 's/^version:[[:space:]]*//p' pubspec.yaml | head -n 1 | tr -d '\r')"
+          if [ -z "$VERSION" ]; then
+            echo "Could not read version from pubspec.yaml"
+            exit 1
+          fi
+          SAFE_VERSION="${VERSION//+/-}"
+          TAG="v${SAFE_VERSION}-build.${{ github.event.workflow_run.run_number }}"
+          echo "version=$VERSION" >> "$GITHUB_OUTPUT"
+          echo "tag=$TAG" >> "$GITHUB_OUTPUT"
+
+      - name: Publish APK as the latest GitHub release
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: |
+          test -s release-assets/app-release.apk
+          gh release create "${{ steps.meta.outputs.tag }}" \
+            release-assets/app-release.apk \
+            --repo "${{ github.repository }}" \
+            --title "SAKINA ${{ steps.meta.outputs.version }}" \
+            --notes "نسخة SAKINA المبنية بنجاح من GitHub Actions.\nBuild: #${{ github.event.workflow_run.run_number }}\nCommit: ${{ github.event.workflow_run.head_sha }}"
