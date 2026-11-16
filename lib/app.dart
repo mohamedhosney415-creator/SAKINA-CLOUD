@@ -19,6 +19,7 @@ import 'services/backup_service.dart';
 import 'cloud/cloud_service.dart';
 import 'features/auth_page.dart';
 import 'features/onboarding_page.dart';
+import 'services/update_service.dart';
 
 class SakinaApp extends StatefulWidget {
   const SakinaApp({super.key});
@@ -35,6 +36,7 @@ class _SakinaAppState extends State<SakinaApp> with WidgetsBindingObserver {
   }
 
   Future<void> _startup() async {
+    await Diag.guard('update-check', () => UpdateService.showIfNeeded(sakinaNavigatorKey.currentContext ?? context));
     await Diag.guard('automatic-backup', BackupService.ensureDailyAutoBackup);
     await Diag.guard(
         'audio-background',
