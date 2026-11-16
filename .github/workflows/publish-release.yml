@@ -1,0 +1,99 @@
+name: Publish SAKINA release
+
+on:
+  workflow_run:
+    workflows: ["Build SAKINA APK"]
+    types: [completed]
+    branches: [feature/sakina-5-upgrade]
+
+permissions:
+  actions: read
+  contents: write
+
+concurrency:
+  group: sakina-release-publish
+  cancel-in-progress: false
+
+jobs:
+  publish:
+    if: >-
+      ${{ github.event.workflow_run.conclusion == 'success' &&
+          github.event.workflow_run.head_branch == 'feature/sakina-5-upgrade' }}
+    runs-on: ubuntu-latest
+    steps:
+      - name: Read app version
+        uses: actions/checkout@v4
+        with:
+          ref: ${{ github.event.workflow_run.head_sha }}
+
+      - name: Skip outdated branch builds
+        id: current
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          latest="$(gh api "repos/${GITHUB_REPOSITORY}/git/ref/heads/feature/sakina-5-upgrade" --jq '.object.sha')"
+          if [ "$latest" != "${{ github.event.workflow_run.head_sha }}" ]; then
+            echo "publish=false" >> "$GITHUB_OUTPUT"
+            echo "Skipping outdated build; a newer feature branch commit exists."
+          else
+            echo "publish=true" >> "$GITHUB_OUTPUT"
+          fi
+
+      - name: Download APK artifact from successful build
+        if: steps.current.outputs.publish == 'true'
+        uses: actions/download-artifact@v4
+        with:
+          name: SAKINA-apk
+          path: release-assets
+          github-token: ${{ secrets.GITHUB_TOKEN }}
+          run-id: ${{ github.event.workflow_run.id }}
+
+      - name: Prepare release metadata
+        if: steps.current.outputs.publish == 'true'
+        id: meta
+        shell: bash
+        run: |
+          set -euo pipefail
+
+          VERSION="$(sed -n 's/^version:[[:space:]]*//p' pubspec.yaml | head -n 1 | tr -d '\r' | xargs)"
+          if [ -z "$VERSION" ]; then
+            echo "::error::Could not read version from pubspec.yaml"
+            exit 1
+          fi
+
+          APK_PATH="$(find release-assets -type f -iname '*.apk' -print -quit)"
+          if [ -z "$APK_PATH" ] || [ ! -s "$APK_PATH" ]; then
+            echo "::error::APK artifact is missing or empty"
+            echo "Downloaded files:"
+            find release-assets -maxdepth 5 -type f -print || true
+            exit 1
+          fi
+
+          SAFE_VERSION="${VERSION//+/-}"
+          TAG="v${SAFE_VERSION}-build-${{ github.event.workflow_run.run_number }}"
+
+          {
+            echo "version=$VERSION"
+            echo "tag=$TAG"
+            echo "apk_path=$APK_PATH"
+          } >> "$GITHUB_OUTPUT"
+
+          echo "Publishing $TAG from build #${{ github.event.workflow_run.run_number }}"
+          echo "APK: $APK_PATH"
+          ls -lh "$APK_PATH"
+
+      - name: Publish APK release
+        if: steps.current.outputs.publish == 'true'
+        uses: softprops/action-gh-release@v2
+        with:
+          token: ${{ secrets.GITHUB_TOKEN }}
+          tag_name: ${{ steps.meta.outputs.tag }}
+          target_commitish: ${{ github.event.workflow_run.head_sha }}
+          name: SAKINA ${{ steps.meta.outputs.version }} (Build #${{ github.event.workflow_run.run_number }})
+          body: |
+            نسخة SAKINA المبنية بنجاح من GitHub Actions.
+            Build: #${{ github.event.workflow_run.run_number }}
+            Commit: ${{ github.event.workflow_run.head_sha }}
+          files: ${{ steps.meta.outputs.apk_path }}
+          fail_on_unmatched_files: true
+          make_latest: true
