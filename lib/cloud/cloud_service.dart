@@ -104,6 +104,45 @@ class CloudService {
     return List<Map<String, dynamic>>.from(rows);
   }
 
+  static Future<List<Map<String, dynamic>>> myMessages() async {
+    final u = user;
+    if (u == null) return const [];
+    final rows = await client.from('user_messages').select('id,title,body,created_at,read_at').eq('recipient_id', u.id).order('created_at', ascending: false);
+    return List<Map<String, dynamic>>.from(rows);
+  }
+  static Future<void> sendMessage({required String recipientId, required String title, required String body}) async {
+    final u = user;
+    if (u == null || !await isOwner()) throw StateError('Owner access required');
+    await client.from('user_messages').insert({'recipient_id': recipientId, 'sender_id': u.id, 'title': title, 'body': body});
+  }
+
+  static Future<void> broadcastMessage({required String title, required String body}) async {
+    final u = user;
+    if (u == null || !await isOwner()) throw StateError('Owner access required');
+    final rows = await client.from('profiles').select('id').eq('role', 'user');
+    final ids = List<Map<String, dynamic>>.from(rows).map((x) => '\${x['id']}').toList();
+    if (ids.isEmpty) return;
+    await client.from('user_messages').insert(ids.map((id) => {'recipient_id': id, 'sender_id': u.id, 'title': title, 'body': body}).toList());
+  }
+
+  static Future<void> blockUser(String userId, {String? reason}) async {
+    final u = user;
+    if (u == null || !await isOwner()) throw StateError('Owner access required');
+    await client.from('user_blocks').upsert({'user_id': userId, 'blocked_by': u.id, 'reason': reason});
+  }
+
+  static Future<void> unblockUser(String userId) async {
+    if (!await isOwner()) throw StateError('Owner access required');
+    await client.from('user_blocks').delete().eq('user_id', userId);
+  }
+
+  static Future<bool> isBlocked() async {
+    final u = user;
+    if (u == null) return false;
+    final row = await client.from('user_blocks').select('user_id,reason').eq('user_id', u.id).maybeSingle();
+    return row != null;
+  }
+
   static String prettyJson(Object value) =>
       const JsonEncoder.withIndent('  ').convert(value);
 }
