@@ -68,6 +68,8 @@ class Settings extends ChangeNotifier {
   bool get noorNotificationOn => _b('noorNotificationOn', true);
   int get noorNotificationHour => _i('noorNotificationHour', 8);
   bool get streakReminderOn => _b('streakReminderOn', true);
+  bool get gameReminderOn => _b('gameReminderOn', true);
+  int get gameReminderHour => _i('gameReminderHour', 19);
   int get streakReminderHour => _i('streakReminderHour', 20);
 
   // تذكيرات القرآن والأذكار والصيام (قناع الأيام: الاثنين=1 ... الأحد=7).
@@ -128,6 +130,8 @@ class Settings extends ChangeNotifier {
               'noorNotificationHour',
               'streakReminderOn',
               'streakReminderHour',
+              'gameReminderOn',
+              'gameReminderHour',
               'quranReminderOn',
               'quranReminderHour',
               'quranReminderDays',
