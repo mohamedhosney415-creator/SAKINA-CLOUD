@@ -2,12 +2,14 @@ import 'dart:math';
 
 import 'package:flutter/material.dart';
 import 'package:just_audio/just_audio.dart';
+import 'package:google_fonts/google_fonts.dart';
 
 import '../../../core/theme.dart';
 import '../../../core/widgets.dart';
 import '../../../services/audio_controller.dart';
 import '../models/quran_game_question.dart';
 import '../services/quran_game_service.dart';
+import '../../../services/quran_service.dart';
 import 'quran_game_aux_pages.dart';
 
 /// الواجهة المستقلة للعبة: جلسة ليلية، XP، أهداف، مسار ومحطات وتنقل داخلي.
@@ -974,11 +976,33 @@ class QuranGameQuizPage extends StatefulWidget {
 class _QuranGameQuizPageState extends State<QuranGameQuizPage> {
   late QuranGameQuestion q;
   String? selected;
+  String? previousAyah;
+  String? nextAyah;
   bool? correct;
   bool loading = false;
   bool showHint = false;
   List<String>? choices;
   bool hasSecondChance = false;
+  Future<void> _loadAdjacentAyahs() async {
+    if (!q.isQuran) return;
+    try {
+      final verses = await QuranService.text(q.surahNumber);
+      final i = verses.indexWhere((a) => a.n == q.ayahNumber);
+      if (!mounted || i < 0) return;
+      setState(() { previousAyah = i > 0 ? verses[i - 1].text : null; nextAyah = i + 1 < verses.length ? verses[i + 1].text : null; });
+    } catch (_) {}
+  }
+
+  TextSpan _quranText(String text, double size, Color color) {
+    final spans = <TextSpan>[];
+    final marks = RegExp('[\\u064B-\\u065F\\u0670\\u06D6-\\u06ED]');
+    for (final rune in text.runes) {
+      final ch = String.fromCharCode(rune);
+      spans.add(TextSpan(text: ch, style: TextStyle(color: marks.hasMatch(ch) ? Colors.red : color)));
+    }
+    return TextSpan(children: spans, style: GoogleFonts.amiri(fontSize: size, height: 1.95, fontWeight: FontWeight.w700, color: color));
+  }
+
   @override
   void initState() {
     super.initState();
@@ -986,6 +1010,7 @@ class _QuranGameQuizPageState extends State<QuranGameQuizPage> {
       requestedLevel: QuranGameService.level,
       daily: widget.daily,
     );
+    _loadAdjacentAyahs();
   }
 
   @override
