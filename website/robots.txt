@@ -1,0 +1,4 @@
+User-agent: *
+Allow: /
+
+Sitemap: https://sakina-2yy.pages.dev/sitemap.xml
