@@ -89,8 +89,24 @@ class QuranGameService {
 
   static Future<void> syncFromCloud() async {
     try {
+      if (!GameCloudService.enabled) return;
+      final userId = GameCloudService.client.auth.currentUser?.id;
+      if (userId == null) return;
+
+      // qgame_* values are stored on the device, so they must not follow a
+      // different account when users sign out and switch accounts.
+      // Existing users keep their own cloud progress; a new account starts
+      // with clean local game state and receives its own empty cloud snapshot.
+      final previousUserId = Store.str('game_account_uid');
+      if (previousUserId != userId) {
+        await Store.removeByPrefix('qgame_');
+        await Store.setStr('game_account_uid', userId);
+      }
+
       await GameCloudService.sync(preferRemote: true);
-    } catch (_) {}
+    } catch (_) {
+      // Cloud sync is best-effort; never block the game UI.
+    }
   }
 
   static List<QuranGameQuestion> get questions =>
