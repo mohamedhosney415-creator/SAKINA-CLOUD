@@ -13,6 +13,18 @@ void main() {
     await QuranGameService.reset();
   });
 
+  test('clearing game data for another account preserves other app data', () async {
+    await Store.setInt('qgame_level', 42);
+    await Store.setInt('qgame_noor', 900);
+    await Store.setInt('prayer_counter', 7);
+
+    await Store.removeByPrefix('qgame_');
+
+    expect(Store.integer('qgame_level', 1), 1);
+    expect(Store.integer('qgame_noor'), 0);
+    expect(Store.integer('prayer_counter'), 7);
+  });
+
   test(
     'question bank has 1,000 distinct valid questions across all levels',
     () {
