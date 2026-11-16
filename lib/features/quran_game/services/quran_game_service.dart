@@ -11,6 +11,7 @@ class QuranGameConfig {
   static const levelBonus = 25;
   static const perfectBonus = 50;
   static const dailyBonus = 30;
+  static const dailyQuestions = 5;
   static const hintCost = 30;
   static const removeTwoCost = 50;
   static const secondChanceCost = 75;
@@ -124,6 +125,10 @@ class QuranGameService {
       Store.integer('qgame_longest_streak').clamp(0, 36500).toInt();
   static int get dailyChallenges =>
       Store.integer('qgame_daily_count').clamp(0, 1 << 30).toInt();
+  static int get dailyAnswered =>
+      Store.integer('qgame_daily_answered').clamp(0, dailyQuestions).toInt();
+  static int get dailyCorrect =>
+      Store.integer('qgame_daily_correct').clamp(0, dailyQuestions).toInt();
   static int get perfectLevels =>
       Store.integer('qgame_perfect_levels').clamp(0, 100).toInt();
   static int get achievementCount =>
@@ -228,7 +233,13 @@ class QuranGameService {
     await _credit(earnedNoor, 'إجابة صحيحة');
     if (daily) {
       await Store.setStr('qgame_daily_attempt_date', todayKey);
-      if (correct) await Store.setStr('qgame_daily_success_date', todayKey);
+      await Store.setInt('qgame_daily_answered', dailyAnswered + 1);
+      if (correct) {
+        await Store.setInt('qgame_daily_correct', dailyCorrect + 1);
+        if (dailyAnswered + 1 >= dailyQuestions) {
+          await Store.setStr('qgame_daily_success_date', todayKey);
+        }
+      }
     }
     if (!daily && !retry) {
       await Store.setInt(
@@ -322,6 +333,7 @@ class QuranGameService {
     if (dailyDone) return 0;
     final now = DateTime.now();
     final today = todayKey;
+    if (dailyAnswered < dailyQuestions || dailyCorrect < dailyQuestions) return 0;
     if (Store.str('qgame_daily_success_date') != today) return 0;
     final last = Store.str('qgame_last_day');
     // Never let a backward device-clock change pay or advance the streak again.
@@ -524,6 +536,8 @@ class QuranGameService {
       'qgame_daily_done',
       'qgame_daily_attempt_date',
       'qgame_daily_success_date',
+      'qgame_daily_answered',
+      'qgame_daily_correct',
       'qgame_last_day',
       'qgame_level_history',
       'qgame_history',
