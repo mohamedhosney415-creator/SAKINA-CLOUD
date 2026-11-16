@@ -38,17 +38,19 @@ jobs:
         id: meta
         shell: bash
         run: |
-          VERSION="$(awk -F: '/^version:/ {gsub(/[[:space:]]/, "", $2); print $2; exit}' pubspec.yaml)"
+          set -euo pipefail
+
+          VERSION="$(sed -n 's/^version:[[:space:]]*//p' pubspec.yaml | head -n 1 | tr -d '\r' | xargs)"
           if [ -z "$VERSION" ]; then
-            echo "Could not read version from pubspec.yaml"
+            echo "::error::Could not read version from pubspec.yaml"
             exit 1
           fi
 
-          APK_PATH="$(find release-assets -type f -name 'app-release.apk' -print -quit)"
+          APK_PATH="$(find release-assets -type f -iname '*.apk' -print -quit)"
           if [ -z "$APK_PATH" ] || [ ! -s "$APK_PATH" ]; then
-            echo "APK artifact is missing or empty"
+            echo "::error::APK artifact is missing or empty"
             echo "Downloaded files:"
-            find release-assets -maxdepth 4 -type f -print || true
+            find release-assets -maxdepth 5 -type f -print || true
             exit 1
           fi
 
@@ -63,6 +65,7 @@ jobs:
 
           echo "Publishing $TAG from build #${{ github.event.workflow_run.run_number }}"
           echo "APK: $APK_PATH"
+          ls -lh "$APK_PATH"
 
       - name: Publish APK release
         uses: softprops/action-gh-release@v2
