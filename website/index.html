@@ -57,12 +57,12 @@
 </div></div></section>
 <section class="quran-band" id="quran"><div class="container quran-grid"><div class="quran-copy"><span class="eyebrow">نور يومك بالقرآن</span><h2>افتح مصحفك…<br>واقترب أكثر</h2><p>اقرأ واستمع وتابع وردك بالطريقة التي تناسبك. صُممت تجربة القرآن في سكينة لتكون واضحة ومريحة وتساعدك على مواصلة رحلتك.</p></div><div class="verse"><strong>وَنُنَزِّلُ مِنَ الْقُرْآنِ مَا هُوَ شِفَاءٌ وَرَحْمَةٌ لِّلْمُؤْمِنِينَ</strong><small>سورة الإسراء · ٨٢</small></div></div></section>
 <section class="section"><div class="container"><div class="section-head"><span class="eyebrow">ابدأ ببساطة</span><h2>سكينة معك في ثلاث خطوات</h2><p>ابدأ رحلتك واجعل التطبيق جزءاً من يومك.</p></div><div class="steps"><div class="step"><div class="num">١</div><h3>حمّل التطبيق</h3><p>احصل على نسخة سكينة وثبّتها على هاتفك.</p></div><div class="step"><div class="num">٢</div><h3>اضبط تفضيلاتك</h3><p>اختر مدينتك وإعدادات الصلاة والتنبيهات المناسبة لك.</p></div><div class="step"><div class="num">٣</div><h3>ابدأ رحلتك</h3><p>اقرأ واستمع وداوم على وردك وأذكارك اليومية.</p></div></div></div></section>
-<section class="download" id="download"><div class="container"><div class="download-box"><span class="eyebrow">ابدأ رحلتك مع سكينة</span><h2>الطمأنينة أقرب مما تتخيل</h2><p>حمّل أحدث نسخة رسمية من سكينة، واجعل القرآن والذكر أقرب إلى تفاصيل يومك.</p><a class="btn btn-primary" id="downloadBtn" href="https://github.com/mohamedhosney415-creator/SAKINA-CLOUD/releases/latest" target="_blank" rel="noopener">تحميل أحدث إصدار <span>↓</span></a><p class="download-note" id="latestReleaseInfo" aria-live="polite">جارٍ التحقق من أحدث إصدار…</p></div></div></section>
+<section class="download" id="download"><div class="container"><div class="download-box"><span class="eyebrow">ابدأ رحلتك مع سكينة</span><h2>الطمأنينة أقرب مما تتخيل</h2><p>حمّل أحدث نسخة رسمية من سكينة، واجعل القرآن والذكر أقرب إلى تفاصيل يومك.</p><a class="btn btn-primary" id="downloadBtn" href="https://github.com/mohamedhosney415-creator/SAKINA-CLOUD/releases/latest/download/app-release.apk">تحميل أحدث إصدار <span>↓</span></a><p class="download-note" id="latestReleaseInfo" aria-live="polite">جارٍ التحقق من أحدث إصدار…</p></div></div></section>
 <section class="section" id="faq"><div class="container"><div class="section-head"><span class="eyebrow">هل لديك سؤال؟</span><h2>الأسئلة الشائعة</h2><p>إجابات سريعة عن تطبيق سكينة.</p></div><div class="faq">
   <details><summary>ما هو تطبيق سكينة؟</summary><p>سكينة تطبيق إسلامي يجمع أدوات يومية مثل القرآن الكريم ومواقيت الصلاة والأذكار والورد والأحاديث والتحديات القرآنية.</p></details>
   <details><summary>هل يمكنني اختيار مدينتي لمواقيت الصلاة؟</summary><p>نعم، يتيح التطبيق اختيار المدينة يدوياً وضبط إعدادات مواقيت الصلاة.</p></details>
   <details><summary>هل يمكن الاستماع إلى القرآن الكريم؟</summary><p>يضم التطبيق ميزة الاستماع للقرآن الكريم مع خيارات للقراء، بحسب النسخة المتاحة.</p></details>
-  <details><summary>من أين أحصل على آخر إصدار؟</summary><p>من زر التحميل في هذه الصفحة، وسيتم ربطه بآخر إصدار رسمي بمجرد نشر ملف التطبيق.</p></details>
+  <details><summary>من أين أحصل على آخر إصدار؟</summary><p>من زر التحميل في هذه الصفحة، ووسيبدأ تنزيل ملف APK مباشرة دون فتح صفحة GitHub.</p></details>
 </div></div></section>
 </main>
 <footer><div class="container footer-row"><a class="brand" href="#home"><span class="brand-mark">س</span><span>SAKINA<small>سكينة</small></span></a><div>© <span id="year"></span> SAKINA. جميع الحقوق محفوظة.</div><div class="footer-links"><a href="#features">المميزات</a><a href="#download">التحميل</a><a href="https://github.com/mohamedhosney415-creator/SAKINA-CLOUD" target="_blank" rel="noopener">GitHub</a></div></div></footer>
@@ -85,6 +85,8 @@
       const button = document.getElementById('downloadBtn');
       if (!apk) throw new Error('APK asset not found');
       button.href = apk.browser_download_url;
+      button.removeAttribute("target");
+      button.removeAttribute("rel");
       info.textContent = 'أحدث نسخة: ' + release.tag_name + ' · حجم الملف: ' + (apk.size / 1048576).toFixed(1) + ' MB';
     })
     .catch(() => {
