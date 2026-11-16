@@ -62,6 +62,8 @@ class QuranGameService {
             .where((q) =>
                 q.level >= 1 &&
                 q.level <= 100 &&
+                q.isQuran &&
+                _isAllowedQuranType(q.questionType) &&
                 q.options.length == 4 &&
                 q.options.contains(q.correctOption) &&
                 q.questionType.trim().isNotEmpty)
@@ -108,6 +110,8 @@ class QuranGameService {
       // Cloud sync is best-effort; never block the game UI.
     }
   }
+
+  static bool _isAllowedQuranType(String type) => const {'complete_word', 'complete_verse', 'mcq', 'previous_next'}.contains(type);
 
   static List<QuranGameQuestion> get questions =>
       _remoteQuestions ?? quranGameBank;
@@ -230,7 +234,9 @@ class QuranGameService {
         q.options.length != 4 ||
         q.correctOption.trim().isEmpty ||
         !q.options.contains(q.correctOption) ||
-        q.questionType.trim().isEmpty) {
+        q.questionType.trim().isEmpty ||
+        !q.isQuran ||
+        !_isAllowedQuranType(q.questionType)) {
       throw ArgumentError('Invalid Quran game question');
     }
     if (!daily && q.level != level)
