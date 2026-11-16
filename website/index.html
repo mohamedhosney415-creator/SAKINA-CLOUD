@@ -57,7 +57,7 @@
 </div></div></section>
 <section class="quran-band" id="quran"><div class="container quran-grid"><div class="quran-copy"><span class="eyebrow">نور يومك بالقرآن</span><h2>افتح مصحفك…<br>واقترب أكثر</h2><p>اقرأ واستمع وتابع وردك بالطريقة التي تناسبك. صُممت تجربة القرآن في سكينة لتكون واضحة ومريحة وتساعدك على مواصلة رحلتك.</p></div><div class="verse"><strong>وَنُنَزِّلُ مِنَ الْقُرْآنِ مَا هُوَ شِفَاءٌ وَرَحْمَةٌ لِّلْمُؤْمِنِينَ</strong><small>سورة الإسراء · ٨٢</small></div></div></section>
 <section class="section"><div class="container"><div class="section-head"><span class="eyebrow">ابدأ ببساطة</span><h2>سكينة معك في ثلاث خطوات</h2><p>ابدأ رحلتك واجعل التطبيق جزءاً من يومك.</p></div><div class="steps"><div class="step"><div class="num">١</div><h3>حمّل التطبيق</h3><p>احصل على نسخة سكينة وثبّتها على هاتفك.</p></div><div class="step"><div class="num">٢</div><h3>اضبط تفضيلاتك</h3><p>اختر مدينتك وإعدادات الصلاة والتنبيهات المناسبة لك.</p></div><div class="step"><div class="num">٣</div><h3>ابدأ رحلتك</h3><p>اقرأ واستمع وداوم على وردك وأذكارك اليومية.</p></div></div></div></section>
-<section class="download" id="download"><div class="container"><div class="download-box"><span class="eyebrow">ابدأ رحلتك مع سكينة</span><h2>الطمأنينة أقرب مما تتخيل</h2><p>حمّل سكينة قريباً، واجعل القرآن والذكر أقرب إلى تفاصيل يومك.</p><a class="btn btn-primary" href="https://github.com/mohamedhosney415-creator/SAKINA-CLOUD/releases/latest" target="_blank" rel="noopener">تحميل التطبيق <span>↓</span></a><p class="download-note">سيتم توفير رابط أحدث إصدار هنا فور نشر ملف APK في صفحة الإصدارات الرسمية.</p></div></div></section>
+<section class="download" id="download"><div class="container"><div class="download-box"><span class="eyebrow">ابدأ رحلتك مع سكينة</span><h2>الطمأنينة أقرب مما تتخيل</h2><p>حمّل أحدث نسخة رسمية من سكينة، واجعل القرآن والذكر أقرب إلى تفاصيل يومك.</p><a class="btn btn-primary" id="downloadBtn" href="https://github.com/mohamedhosney415-creator/SAKINA-CLOUD/releases/latest" target="_blank" rel="noopener">تحميل أحدث إصدار <span>↓</span></a><p class="download-note" id="latestReleaseInfo" aria-live="polite">جارٍ التحقق من أحدث إصدار…</p></div></div></section>
 <section class="section" id="faq"><div class="container"><div class="section-head"><span class="eyebrow">هل لديك سؤال؟</span><h2>الأسئلة الشائعة</h2><p>إجابات سريعة عن تطبيق سكينة.</p></div><div class="faq">
   <details><summary>ما هو تطبيق سكينة؟</summary><p>سكينة تطبيق إسلامي يجمع أدوات يومية مثل القرآن الكريم ومواقيت الصلاة والأذكار والورد والأحاديث والتحديات القرآنية.</p></details>
   <details><summary>هل يمكنني اختيار مدينتي لمواقيت الصلاة؟</summary><p>نعم، يتيح التطبيق اختيار المدينة يدوياً وضبط إعدادات مواقيت الصلاة.</p></details>
@@ -71,5 +71,25 @@
   menuBtn.addEventListener('click',()=>navLinks.classList.toggle('open'));
   navLinks.querySelectorAll('a').forEach(a=>a.addEventListener('click',()=>navLinks.classList.remove('open')));
   document.getElementById('year').textContent=new Date().getFullYear();
+  // Fetch the newest public APK release so the website always points to the latest version.
+  fetch('https://api.github.com/repos/mohamedhosney415-creator/SAKINA-CLOUD/releases/latest', {
+    headers: { 'Accept': 'application/vnd.github+json' }
+  })
+    .then(response => {
+      if (!response.ok) throw new Error('No published release yet');
+      return response.json();
+    })
+    .then(release => {
+      const apk = (release.assets || []).find(asset => asset.name.toLowerCase().endsWith('.apk'));
+      const info = document.getElementById('latestReleaseInfo');
+      const button = document.getElementById('downloadBtn');
+      if (!apk) throw new Error('APK asset not found');
+      button.href = apk.browser_download_url;
+      info.textContent = 'أحدث نسخة: ' + release.tag_name + ' · حجم الملف: ' + (apk.size / 1048576).toFixed(1) + ' MB';
+    })
+    .catch(() => {
+      document.getElementById('latestReleaseInfo').textContent =
+        'سيظهر رابط التحميل المباشر هنا تلقائياً فور نشر أول نسخة APK رسمية.';
+    });
 </script>
 </body></html>
