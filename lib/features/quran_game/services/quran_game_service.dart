@@ -11,7 +11,7 @@ class QuranGameConfig {
   static const levelBonus = 25;
   static const perfectBonus = 50;
   static const dailyBonus = 30;
-  static const dailyQuestions = 5;
+  static const QuranGameConfig.dailyQuestions = 5;
   static const hintCost = 30;
   static const removeTwoCost = 50;
   static const secondChanceCost = 75;
@@ -126,9 +126,9 @@ class QuranGameService {
   static int get dailyChallenges =>
       Store.integer('qgame_daily_count').clamp(0, 1 << 30).toInt();
   static int get dailyAnswered =>
-      Store.integer('qgame_daily_answered').clamp(0, dailyQuestions).toInt();
+      Store.integer('qgame_daily_answered').clamp(0, QuranGameConfig.dailyQuestions).toInt();
   static int get dailyCorrect =>
-      Store.integer('qgame_daily_correct').clamp(0, dailyQuestions).toInt();
+      Store.integer('qgame_daily_correct').clamp(0, QuranGameConfig.dailyQuestions).toInt();
   static int get perfectLevels =>
       Store.integer('qgame_perfect_levels').clamp(0, 100).toInt();
   static int get achievementCount =>
@@ -236,7 +236,7 @@ class QuranGameService {
       await Store.setInt('qgame_daily_answered', dailyAnswered + 1);
       if (correct) {
         await Store.setInt('qgame_daily_correct', dailyCorrect + 1);
-        if (dailyAnswered + 1 >= dailyQuestions) {
+        if (dailyAnswered + 1 >= QuranGameConfig.dailyQuestions) {
           await Store.setStr('qgame_daily_success_date', todayKey);
         }
       }
@@ -333,7 +333,7 @@ class QuranGameService {
     if (dailyDone) return 0;
     final now = DateTime.now();
     final today = todayKey;
-    if (dailyAnswered < dailyQuestions || dailyCorrect < dailyQuestions) return 0;
+    if (dailyAnswered < QuranGameConfig.dailyQuestions || dailyCorrect < QuranGameConfig.dailyQuestions) return 0;
     if (Store.str('qgame_daily_success_date') != today) return 0;
     final last = Store.str('qgame_last_day');
     // Never let a backward device-clock change pay or advance the streak again.
