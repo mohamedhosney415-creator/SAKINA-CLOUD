@@ -66,7 +66,7 @@
     <article class="platform-card available">
       <div class="platform-top"><div class="platform-icon">🤖</div><span class="status-pill">متاح للتحميل</span></div>
       <h3>Android</h3><p>حمّل ملف APK الرسمي وثبّت التطبيق على هاتفك.</p>
-      <a class="btn btn-primary" id="downloadBtn" href="https://github.com/mohamedhosney415-creator/SAKINA-CLOUD/releases/latest/download/app-release.apk">تحميل APK <span>↓</span></a>
+      <a class="btn btn-primary" id="downloadBtn" href="https://github.com/mohamedhosney415-creator/SAKINA-CLOUD/releases/download/v4.9.0-17-build-232/app-release.apk?download=1">تحميل APK <span>↓</span></a>
       <p class="platform-meta" id="latestReleaseInfo" aria-live="polite">جارٍ التحقق من أحدث إصدار…</p>
     </article>
     <article class="platform-card">
@@ -91,8 +91,9 @@
   navLinks.querySelectorAll('a').forEach(a=>a.addEventListener('click',()=>navLinks.classList.remove('open')));
   document.getElementById('year').textContent=new Date().getFullYear();
   // Fetch the newest public APK release so the website always points to the latest version.
-  fetch('https://api.github.com/repos/mohamedhosney415-creator/SAKINA-CLOUD/releases/latest', {
-    headers: { 'Accept': 'application/vnd.github+json' }
+  fetch('https://api.github.com/repos/mohamedhosney415-creator/SAKINA-CLOUD/releases/latest?site_refresh=20261116-232', {
+    cache: 'no-store',
+    headers: { 'Accept': 'application/vnd.github+json', 'Cache-Control': 'no-cache' }
   })
     .then(response => {
       if (!response.ok) throw new Error('No published release yet');
