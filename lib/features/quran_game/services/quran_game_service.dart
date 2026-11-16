@@ -197,7 +197,7 @@ class QuranGameService {
     if (!daily && q.level != level)
       throw StateError('Question does not belong to the current level');
     final alreadyAnswered = daily
-        ? dailyDone
+        ? dailyDone || dailyAnswered >= QuranGameConfig.dailyQuestions
         : questionsAnsweredInCurrentLevel >= QuranGameConfig.questionsPerLevel;
     if (alreadyAnswered) return {'points': 0, 'noor': 0, 'combo': combo};
     final levelHistory =
@@ -236,9 +236,9 @@ class QuranGameService {
       await Store.setInt('qgame_daily_answered', dailyAnswered + 1);
       if (correct) {
         await Store.setInt('qgame_daily_correct', dailyCorrect + 1);
-        if (dailyAnswered + 1 >= QuranGameConfig.dailyQuestions) {
-          await Store.setStr('qgame_daily_success_date', todayKey);
-        }
+      }
+      if (dailyAnswered + 1 >= QuranGameConfig.dailyQuestions) {
+        await Store.setStr('qgame_daily_success_date', todayKey);
       }
     }
     if (!daily && !retry) {
@@ -333,7 +333,7 @@ class QuranGameService {
     if (dailyDone) return 0;
     final now = DateTime.now();
     final today = todayKey;
-    if (dailyAnswered < QuranGameConfig.dailyQuestions || dailyCorrect < QuranGameConfig.dailyQuestions) return 0;
+    if (dailyAnswered < QuranGameConfig.dailyQuestions) return 0;
     if (Store.str('qgame_daily_success_date') != today) return 0;
     final last = Store.str('qgame_last_day');
     // Never let a backward device-clock change pay or advance the streak again.
