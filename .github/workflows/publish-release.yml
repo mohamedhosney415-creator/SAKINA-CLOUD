@@ -38,7 +38,7 @@ jobs:
         id: meta
         shell: bash
         run: |
-          VERSION="$(awk -F: '/^version:/ {gsub(/[[:space:]]/, "", \$2); print \$2; exit}' pubspec.yaml)"
+          VERSION="$(awk -F: '/^version:/ {gsub(/[[:space:]]/, "", $2); print $2; exit}' pubspec.yaml)"
           if [ -z "$VERSION" ]; then
             echo "Could not read version from pubspec.yaml"
             exit 1
