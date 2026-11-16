@@ -5,6 +5,7 @@ import '../cloud/cloud_service.dart';
 import 'admin_dashboard_page.dart';
 import 'about_page.dart';
 import 'account_page.dart';
+import 'messages_page.dart';
 import 'calendar_page.dart';
 import 'challenges_page.dart';
 import 'daily_assistant_page.dart';
@@ -99,6 +100,7 @@ class _MorePageState extends State<MorePage> {
               Icons.dark_mode_rounded, const RamadanPage()),
         ]),
         _MoreGroup('الحساب والتطبيق', [
+          if (CloudService.signedIn) _MoreItem('رسائل سكينة', 'رسائل المالك والتنبيهات المرسلة لك', Icons.mark_email_rounded, const MessagesPage()),
           _MoreItem('حساب سكينة', 'تسجيل الدخول والمزامنة السحابية',
               Icons.account_circle_rounded, const AccountPage()),
           if (_isOwner)
