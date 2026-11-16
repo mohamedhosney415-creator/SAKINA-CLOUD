@@ -166,8 +166,13 @@ class NotificationService {
 
   static Future<void> init() async {
     const android = AndroidInitializationSettings('@mipmap/ic_launcher');
+    const darwin = DarwinInitializationSettings(
+      requestAlertPermission: false,
+      requestBadgePermission: false,
+      requestSoundPermission: false,
+    );
     await notificationsPlugin.initialize(
-      const InitializationSettings(android: android),
+      const InitializationSettings(android: android, iOS: darwin),
       onDidReceiveNotificationResponse: (response) {
         final payload = response.payload ?? '';
         if (payload.startsWith('adhan:')) {
@@ -201,6 +206,11 @@ class NotificationService {
   /// إذن الإشعارات فقط (لا يفتح شاشات إعدادات).
   static Future<bool> requestNotificationsOnly() async {
     try {
+      if (Platform.isIOS) {
+        return (await _darwin?.requestPermissions(
+              alert: true, badge: true, sound: true)) ??
+            true;
+      }
       return (await _android?.requestNotificationsPermission()) ?? true;
     } catch (_) {
       return false;
@@ -211,8 +221,14 @@ class NotificationService {
       notificationsPlugin.resolvePlatformSpecificImplementation<
           AndroidFlutterLocalNotificationsPlugin>();
 
-  static Future<bool> notificationsAllowed() async =>
-      (await _android?.areNotificationsEnabled()) ?? true;
+  static DarwinFlutterLocalNotificationsPlugin? get _darwin =>
+      notificationsPlugin.resolvePlatformSpecificImplementation<
+          DarwinFlutterLocalNotificationsPlugin>();
+
+  static Future<bool> notificationsAllowed() async {
+    if (Platform.isIOS) return true;
+    return (await _android?.areNotificationsEnabled()) ?? true;
+  }
 
   static Future<bool> exactAllowed() async {
     try {
@@ -223,6 +239,15 @@ class NotificationService {
   }
 
   static Future<bool> requestPermissions() async {
+    if (Platform.isIOS) {
+      try {
+        return (await _darwin?.requestPermissions(
+              alert: true, badge: true, sound: true)) ??
+            true;
+      } catch (_) {
+        return false;
+      }
+    }
     bool ok = true;
     try {
       ok = (await _android?.requestNotificationsPermission()) ?? true;
@@ -237,6 +262,7 @@ class NotificationService {
   }
 
   static Future<bool> requestFullScreenIntentAccess() async {
+    if (Platform.isIOS) return true;
     try {
       return (await _android?.requestFullScreenIntentPermission()) ?? true;
     } catch (_) {
@@ -253,6 +279,11 @@ class NotificationService {
     const raw = 'sakina_adhan';
     final channel = 'sakina_full_adhan_v2_${vib ? 'v' : 'n'}';
     return NotificationDetails(
+      darwin: const DarwinNotificationDetails(
+        presentAlert: true,
+        presentBadge: true,
+        presentSound: true,
+      ),
       android: AndroidNotificationDetails(
         channel,
         'الأذان',
@@ -276,6 +307,11 @@ class NotificationService {
 
   static NotificationDetails _reminderDetails(String body) =>
       NotificationDetails(
+        darwin: const DarwinNotificationDetails(
+        presentAlert: true,
+        presentBadge: true,
+        presentSound: true,
+      ),
         android: AndroidNotificationDetails(
           'sakina_reminder',
           'تذكير قبل الصلاة',
@@ -288,6 +324,11 @@ class NotificationService {
 
   static NotificationDetails _generalDetails(String body) =>
       NotificationDetails(
+        darwin: const DarwinNotificationDetails(
+        presentAlert: true,
+        presentBadge: true,
+        presentSound: true,
+      ),
         android: AndroidNotificationDetails(
           'sakina_general',
           'تنبيهات سكينة',
@@ -300,6 +341,11 @@ class NotificationService {
 
   static NotificationDetails _dailyMessageDetails(String body) =>
       NotificationDetails(
+        darwin: const DarwinNotificationDetails(
+        presentAlert: true,
+        presentBadge: true,
+        presentSound: true,
+      ),
         android: AndroidNotificationDetails(
           'sakina_daily_message_v1',
           'رسالة سكينة اليومية',
@@ -311,6 +357,11 @@ class NotificationService {
       );
 
   static NotificationDetails _noorDetails(String body) => NotificationDetails(
+        darwin: const DarwinNotificationDetails(
+        presentAlert: true,
+        presentBadge: true,
+        presentSound: true,
+      ),
         android: AndroidNotificationDetails(
           'sakina_noor_daily_v1',
           'نور يومك',
@@ -322,6 +373,11 @@ class NotificationService {
       );
 
   static NotificationDetails _streakDetails(String body) => NotificationDetails(
+        darwin: const DarwinNotificationDetails(
+        presentAlert: true,
+        presentBadge: true,
+        presentSound: true,
+      ),
         android: AndroidNotificationDetails(
           'sakina_streak_v1',
           'تذكير الاستمرار',
@@ -334,6 +390,11 @@ class NotificationService {
 
   static NotificationDetails _personalReminderDetails(String body) =>
       NotificationDetails(
+        darwin: const DarwinNotificationDetails(
+        presentAlert: true,
+        presentBadge: true,
+        presentSound: true,
+      ),
         android: AndroidNotificationDetails(
           'sakina_personal_reminders_v1',
           'تذكيرات القرآن والأذكار والصيام',
