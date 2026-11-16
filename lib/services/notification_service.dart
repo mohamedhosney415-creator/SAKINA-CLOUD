@@ -468,6 +468,17 @@ class NotificationService {
         }
       }
 
+      if (!s.quietMode && s.gameReminderOn) {
+        final when = cairoDate(
+            date.year, date.month, date.day, s.gameReminderHour, 0);
+        if (when.isAfter(now)) {
+          const body =
+              'تحدي سكينة اليوم مستنيك. خمس أسئلة تكفي لتحافظ على تقدمك 🔥';
+          await _at(5100 + d, 'تحدي سكينة اليوم', body, when,
+              _generalDetails(body), mode);
+        }
+      }
+
       if (!s.quietMode && s.streakReminderOn &&
           s.intOf('tasbeehTarget', 33) > 0 &&
           !(d == 0 && ActivityService.tasbeehGoalReached())) {
