@@ -11,7 +11,7 @@ class QuranGameConfig {
   static const levelBonus = 25;
   static const perfectBonus = 50;
   static const dailyBonus = 30;
-  static const QuranGameConfig.dailyQuestions = 5;
+  static const dailyQuestions = 5;
   static const hintCost = 30;
   static const removeTwoCost = 50;
   static const secondChanceCost = 75;
