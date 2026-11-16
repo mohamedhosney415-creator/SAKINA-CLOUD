@@ -1204,7 +1204,7 @@ class _QuranGameQuizPageState extends State<QuranGameQuizPage> {
                 Text(
                   q.isQuran
                       ? 'سورة ${q.surahName} • آية ${q.ayahNumber}'
-                      : q.category,
+                      : 'سؤال ديني',
                   textAlign: TextAlign.center,
                   style: TextStyle(
                     color:
@@ -1214,22 +1214,43 @@ class _QuranGameQuizPageState extends State<QuranGameQuizPage> {
                   ),
                 ),
                 const SizedBox(height: 18),
-                if (previousAyah != null) ...[
-                  Text('الآية السابقة', style: TextStyle(color: Theme.of(context).colorScheme.onSurface.withAlpha(110), fontSize: 10, fontWeight: FontWeight.w800)),
-                  const SizedBox(height: 4),
-                  Text.rich(_quranText(previousAyah!, 17, Colors.white70), textAlign: TextAlign.center, textDirection: TextDirection.rtl),
-                  const SizedBox(height: 14),
-                ],
-                Text.rich(
-                  _quranText(answered || !q.isCompleteWord ? q.fullAyah : q.maskedAyah, 29, Colors.white),
-                  textAlign: TextAlign.center,
-                  textDirection: TextDirection.rtl,
-                ),
-                if (nextAyah != null) ...[
-                  const SizedBox(height: 14),
-                  Text('الآية التالية', style: TextStyle(color: Theme.of(context).colorScheme.onSurface.withAlpha(110), fontSize: 10, fontWeight: FontWeight.w800)),
-                  const SizedBox(height: 4),
-                  Text.rich(_quranText(nextAyah!, 17, Colors.white70), textAlign: TextAlign.center, textDirection: TextDirection.rtl),
+                if (q.isQuran) ...[
+                  if (previousAyah != null) ...[
+                    Text('الآية السابقة', style: TextStyle(color: Theme.of(context).colorScheme.onSurface.withAlpha(110), fontSize: 10, fontWeight: FontWeight.w800)),
+                    const SizedBox(height: 4),
+                    Text.rich(_quranText(previousAyah!, 17, Colors.white70), textAlign: TextAlign.center, textDirection: TextDirection.rtl),
+                    const SizedBox(height: 14),
+                  ],
+                  Text.rich(
+                    _quranText(answered || !q.isCompleteWord ? q.fullAyah : q.maskedAyah, 29, Colors.white),
+                    textAlign: TextAlign.center,
+                    textDirection: TextDirection.rtl,
+                  ),
+                  if (nextAyah != null) ...[
+                    const SizedBox(height: 14),
+                    Text('الآية التالية', style: TextStyle(color: Theme.of(context).colorScheme.onSurface.withAlpha(110), fontSize: 10, fontWeight: FontWeight.w800)),
+                    const SizedBox(height: 4),
+                    Text.rich(_quranText(nextAyah!, 17, Colors.white70), textAlign: TextAlign.center, textDirection: TextDirection.rtl),
+                  ],
+                ] else ...[
+                  Container(
+                    width: double.infinity,
+                    padding: const EdgeInsets.symmetric(horizontal: 18, vertical: 20),
+                    decoration: BoxDecoration(
+                      borderRadius: BorderRadius.circular(18),
+                      color: Theme.of(context).colorScheme.primary.withAlpha(12),
+                    ),
+                    child: Text(
+                      q.fullAyah,
+                      textAlign: TextAlign.center,
+                      textDirection: TextDirection.rtl,
+                      style: const TextStyle(
+                        fontSize: 20,
+                        height: 1.7,
+                        fontWeight: FontWeight.w800,
+                      ),
+                    ),
+                  ),
                 ],
                 if (showHint) ...[
                   const SizedBox(height: 8),
