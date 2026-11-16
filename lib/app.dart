@@ -19,6 +19,7 @@ import 'services/backup_service.dart';
 import 'cloud/cloud_service.dart';
 import 'features/auth_page.dart';
 import 'features/onboarding_page.dart';
+import 'services/update_service.dart';
 
 class SakinaApp extends StatefulWidget {
   const SakinaApp({super.key});
@@ -35,6 +36,7 @@ class _SakinaAppState extends State<SakinaApp> with WidgetsBindingObserver {
   }
 
   Future<void> _startup() async {
+    await Diag.guard('update-check', () => UpdateService.showIfNeeded(sakinaNavigatorKey.currentContext ?? context));
     await Diag.guard('automatic-backup', BackupService.ensureDailyAutoBackup);
     await Diag.guard(
         'audio-background',
@@ -111,6 +113,18 @@ class _SakinaAppState extends State<SakinaApp> with WidgetsBindingObserver {
       },
     );
   }
+}
+
+class BlockGate extends StatelessWidget {
+  const BlockGate({super.key});
+  @override Widget build(BuildContext context) => FutureBuilder<bool>(
+    future: CloudService.isBlocked(),
+    builder: (context, snap) {
+      if (!snap.hasData) return const Scaffold(body: Center(child: CircularProgressIndicator()));
+      if (snap.data == true) return Scaffold(appBar: AppBar(title: const Text('الحساب محظور')),body: const Center(child: Padding(padding: EdgeInsets.all(28),child: Text('تم حظر هذا الحساب من قبل مالك SAKINA. تواصل مع المالك إذا كنت تعتقد أن هذا حدث بالخطأ.',textAlign: TextAlign.center,style: TextStyle(fontSize: 16,height: 1.8)))));
+      return const Shell();
+    },
+  );
 }
 
 class Shell extends StatefulWidget {
@@ -210,7 +224,7 @@ class CloudGate extends StatelessWidget {
     return StreamBuilder<AuthState>(
       stream: CloudService.client.auth.onAuthStateChange,
       builder: (context, snap) {
-        if (CloudService.user != null) return const Shell();
+        if (CloudService.user != null) return const BlockGate();
         return const AuthPage();
       },
     );
