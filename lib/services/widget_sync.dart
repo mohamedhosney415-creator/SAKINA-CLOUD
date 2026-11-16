@@ -1,3 +1,4 @@
+import 'dart:io';
 import 'package:home_widget/home_widget.dart';
 import '../core/format.dart';
 import '../core/settings.dart';
@@ -7,6 +8,9 @@ import 'prayer_service.dart';
 /// يرسل المواقيت والورد المحلي لويدجت الشاشة الرئيسية.
 class WidgetSync {
   static Future<void> update() async {
+    // The Android widget provider is native Android-only; iOS widgets need a
+    // separate WidgetKit extension and are intentionally not invoked here.
+    if (!Platform.isAndroid) return;
     try {
       final now = cairoNow();
       final parts = <String>[];
