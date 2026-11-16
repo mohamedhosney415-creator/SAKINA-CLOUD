@@ -61,6 +61,24 @@ class Store {
   static Future<void> setInt(String k, int v) => _put(k, v);
   static Future<void> setFlag(String k, bool v) => _put(k, v);
 
+  /// Removes only keys whose logical names start with [keyPrefix].
+  /// Used to isolate feature-local data when the signed-in account changes.
+  static Future<void> removeByPrefix(String keyPrefix) async {
+    final fullPrefix = _k(keyPrefix);
+    final p = _prefs;
+    if (p != null) {
+      final keys = p.getKeys().where((key) => key.startsWith(fullPrefix)).toList();
+      for (final key in keys) {
+        await p.remove(key);
+      }
+      return;
+    }
+    final keys = _mem.keys.where((key) => key.startsWith(fullPrefix)).toList();
+    for (final key in keys) {
+      _mem.remove(key);
+    }
+  }
+
   static Future<void> remove(String k) async {
     if (_prefs != null) {
       await _prefs!.remove(_k(k));
