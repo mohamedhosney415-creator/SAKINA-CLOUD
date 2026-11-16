@@ -11,6 +11,8 @@ class GameCloudService {
   static bool get enabled => CloudService.enabled && CloudService.signedIn;
   static SupabaseClient get client => CloudService.client;
 
+  static const _activeAccountKey = 'sakina_game_active_user_id';
+
   static Map<String, dynamic> localSnapshot() {
     final all = Store.exportAll();
     return Map<String, dynamic>.fromEntries(
@@ -18,9 +20,30 @@ class GameCloudService {
     );
   }
 
+  /// Game progress is device-local in SharedPreferences, so it must be
+  /// isolated whenever a different Supabase account signs in.
+  /// A new account starts with a clean level-1 state; an existing account
+  /// restores only its own cloud snapshot.
+  static Future<bool> _prepareAccount(String uid) async {
+    final activeUid = Store.str(_activeAccountKey);
+    if (activeUid == uid) return false;
+
+    final oldGameKeys = Store.exportAll()
+        .keys
+        .where((key) => key.startsWith('qgame_'))
+        .toList(growable: false);
+    for (final key in oldGameKeys) {
+      await Store.remove(key);
+    }
+
+    await Store.setStr(_activeAccountKey, uid);
+    return true;
+  }
+
   static Future<void> sync({bool preferRemote = false}) async {
     if (!enabled) return;
     final uid = client.auth.currentUser!.id;
+    final accountChanged = await _prepareAccount(uid);
     final local = localSnapshot();
     final remote = await client
         .from('game_progress')
@@ -39,7 +62,8 @@ class GameCloudService {
       Store.str('qgame_local_changed_at', ''),
     );
 
-    if (preferRemote ||
+    if (accountChanged ||
+        preferRemote ||
         (remoteAt != null && (localAt == null || remoteAt.isAfter(localAt)))) {
       await Store.mergeImport(remoteData);
       await Store.setStr(
