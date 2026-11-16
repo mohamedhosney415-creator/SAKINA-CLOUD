@@ -2,12 +2,14 @@ import 'dart:math';
 
 import 'package:flutter/material.dart';
 import 'package:just_audio/just_audio.dart';
+import 'package:google_fonts/google_fonts.dart';
 
 import '../../../core/theme.dart';
 import '../../../core/widgets.dart';
 import '../../../services/audio_controller.dart';
 import '../models/quran_game_question.dart';
 import '../services/quran_game_service.dart';
+import '../../../services/quran_service.dart';
 import 'quran_game_aux_pages.dart';
 
 /// الواجهة المستقلة للعبة: جلسة ليلية، XP، أهداف، مسار ومحطات وتنقل داخلي.
@@ -443,7 +445,7 @@ class _QuranGamePageState extends State<QuranGamePage> {
                 2,
                 Icons.auto_awesome_rounded,
                 'خطوة جديدة',
-                '6 من 10 أسئلة مكتملة',
+                '${QuranGameService.questionsAnsweredInCurrentLevel} من ${QuranGameConfig.questionsPerLevelFor(QuranGameService.level)} أسئلة مكتملة',
                 true,
                 current: true,
               ),
@@ -974,11 +976,33 @@ class QuranGameQuizPage extends StatefulWidget {
 class _QuranGameQuizPageState extends State<QuranGameQuizPage> {
   late QuranGameQuestion q;
   String? selected;
+  String? previousAyah;
+  String? nextAyah;
   bool? correct;
   bool loading = false;
   bool showHint = false;
   List<String>? choices;
   bool hasSecondChance = false;
+  Future<void> _loadAdjacentAyahs() async {
+    if (!q.isQuran) return;
+    try {
+      final verses = await QuranService.text(q.surahNumber);
+      final i = verses.indexWhere((a) => a.n == q.ayahNumber);
+      if (!mounted || i < 0) return;
+      setState(() { previousAyah = i > 0 ? verses[i - 1].text : null; nextAyah = i + 1 < verses.length ? verses[i + 1].text : null; });
+    } catch (_) {}
+  }
+
+  TextSpan _quranText(String text, double size, Color color) {
+    final spans = <TextSpan>[];
+    final marks = RegExp('[\\u064B-\\u065F\\u0670\\u06D6-\\u06ED]');
+    for (final rune in text.runes) {
+      final ch = String.fromCharCode(rune);
+      spans.add(TextSpan(text: ch, style: TextStyle(color: marks.hasMatch(ch) ? Colors.red : color)));
+    }
+    return TextSpan(children: spans, style: GoogleFonts.amiri(fontSize: size, height: 1.95, fontWeight: FontWeight.w700, color: color));
+  }
+
   @override
   void initState() {
     super.initState();
@@ -986,6 +1010,7 @@ class _QuranGameQuizPageState extends State<QuranGameQuizPage> {
       requestedLevel: QuranGameService.level,
       daily: widget.daily,
     );
+    _loadAdjacentAyahs();
   }
 
   @override
@@ -1068,7 +1093,10 @@ class _QuranGameQuizPageState extends State<QuranGameQuizPage> {
       showHint = false;
       choices = null;
       hasSecondChance = false;
+      previousAyah = null;
+      nextAyah = null;
     });
+    _loadAdjacentAyahs();
   }
 
   Future<void> _hint() async {
@@ -1140,7 +1168,7 @@ class _QuranGameQuizPageState extends State<QuranGameQuizPage> {
                     ? (QuranGameService.dailyDone
                         ? 'اكتمل تحدي اليوم'
                         : 'تحدي من ${QuranGameConfig.dailyQuestions} أسئلة • مرة واحدة يوميًا')
-                    : 'سؤال ${min(count + (answered ? 0 : 1), 10)} من 10',
+                    : 'سؤال ${min(count + (answered ? 0 : 1), QuranGameConfig.questionsPerLevelFor(QuranGameService.level))} من ${QuranGameConfig.questionsPerLevelFor(QuranGameService.level)}',
                 style: const TextStyle(fontWeight: FontWeight.w800),
               ),
               Text(
@@ -1156,7 +1184,7 @@ class _QuranGameQuizPageState extends State<QuranGameQuizPage> {
           LinearProgressIndicator(
             value: widget.daily
                 ? (QuranGameService.dailyDone ? 1 : 0)
-                : count / 10,
+                : count / QuranGameConfig.questionsPerLevelFor(QuranGameService.level),
           ),
           const SizedBox(height: 24),
           Panel(
@@ -1176,7 +1204,7 @@ class _QuranGameQuizPageState extends State<QuranGameQuizPage> {
                 Text(
                   q.isQuran
                       ? 'سورة ${q.surahName} • آية ${q.ayahNumber}'
-                      : q.category,
+                      : 'سؤال ديني',
                   textAlign: TextAlign.center,
                   style: TextStyle(
                     color:
@@ -1186,16 +1214,44 @@ class _QuranGameQuizPageState extends State<QuranGameQuizPage> {
                   ),
                 ),
                 const SizedBox(height: 18),
-                Text(
-                  answered || !q.isCompleteWord ? q.fullAyah : q.maskedAyah,
-                  textAlign: TextAlign.center,
-                  textDirection: TextDirection.rtl,
-                  style: const TextStyle(
-                    fontSize: 27,
-                    height: 1.9,
-                    fontWeight: FontWeight.w700,
+                if (q.isQuran) ...[
+                  if (previousAyah != null) ...[
+                    Text('الآية السابقة', style: TextStyle(color: Theme.of(context).colorScheme.onSurface.withAlpha(110), fontSize: 10, fontWeight: FontWeight.w800)),
+                    const SizedBox(height: 4),
+                    Text.rich(_quranText(previousAyah!, 17, Colors.white70), textAlign: TextAlign.center, textDirection: TextDirection.rtl),
+                    const SizedBox(height: 14),
+                  ],
+                  Text.rich(
+                    _quranText(answered || !q.isCompleteWord ? q.fullAyah : q.maskedAyah, 29, Colors.white),
+                    textAlign: TextAlign.center,
+                    textDirection: TextDirection.rtl,
                   ),
-                ),
+                  if (nextAyah != null) ...[
+                    const SizedBox(height: 14),
+                    Text('الآية التالية', style: TextStyle(color: Theme.of(context).colorScheme.onSurface.withAlpha(110), fontSize: 10, fontWeight: FontWeight.w800)),
+                    const SizedBox(height: 4),
+                    Text.rich(_quranText(nextAyah!, 17, Colors.white70), textAlign: TextAlign.center, textDirection: TextDirection.rtl),
+                  ],
+                ] else ...[
+                  Container(
+                    width: double.infinity,
+                    padding: const EdgeInsets.symmetric(horizontal: 18, vertical: 20),
+                    decoration: BoxDecoration(
+                      borderRadius: BorderRadius.circular(18),
+                      color: Theme.of(context).colorScheme.primary.withAlpha(12),
+                    ),
+                    child: Text(
+                      q.fullAyah,
+                      textAlign: TextAlign.center,
+                      textDirection: TextDirection.rtl,
+                      style: const TextStyle(
+                        fontSize: 20,
+                        height: 1.7,
+                        fontWeight: FontWeight.w800,
+                      ),
+                    ),
+                  ),
+                ],
                 if (showHint) ...[
                   const SizedBox(height: 8),
                   Text(
