@@ -3,10 +3,11 @@ import 'dart:math';
 import '../../../core/store.dart';
 import '../../../cloud/game_cloud_service.dart';
 import '../data/quran_game_bank.dart';
+import '../data/religious_game_bank.dart';
 import '../models/quran_game_question.dart';
 
 class QuranGameConfig {
-  static const questionsPerLevel = 10;
+  static int questionsPerLevelFor(int level) => 5 + ((level - 1) ~/ 5);
   static const basePoints = 10;
   static const levelBonus = 25;
   static const perfectBonus = 50;
@@ -62,8 +63,8 @@ class QuranGameService {
             .where((q) =>
                 q.level >= 1 &&
                 q.level <= 100 &&
-                q.isQuran &&
-                _isAllowedQuranType(q.questionType) &&
+                _isAllowedType(q.questionType) &&
+                (q.isQuran || q.category == 'religious') &&
                 q.options.length == 4 &&
                 q.options.contains(q.correctOption) &&
                 q.questionType.trim().isNotEmpty)
@@ -111,10 +112,17 @@ class QuranGameService {
     }
   }
 
-  static bool _isAllowedQuranType(String type) => const {'complete_word', 'complete_verse', 'mcq', 'previous_next'}.contains(type);
+  static bool _isAllowedType(String type) => const {'complete_word', 'complete_verse', 'mcq', 'previous_next'}.contains(type);
+  static bool _isPlayable(QuranGameQuestion q) =>
+      (q.isQuran || q.category == 'religious') &&
+      _isAllowedType(q.questionType) &&
+      q.options.length == 4 &&
+      q.options.contains(q.correctOption);
 
-  static List<QuranGameQuestion> get questions =>
-      _remoteQuestions ?? quranGameBank;
+  static List<QuranGameQuestion> get questions => [
+        ...(_remoteQuestions ?? quranGameBank),
+        ...religiousGameBank,
+      ];
   static int get level => Store.integer('qgame_level', 1).clamp(1, 100).toInt();
   static int get score =>
       Store.integer('qgame_score').clamp(0, 1 << 30).toInt();
@@ -132,14 +140,14 @@ class QuranGameService {
       Store.integer('qgame_wrong').clamp(0, totalQuestions).toInt();
   static int get questionsAnsweredInCurrentLevel =>
       Store.integer('qgame_level_answered')
-          .clamp(0, QuranGameConfig.questionsPerLevel)
+          .clamp(0, QuranGameConfig.questionsPerLevelFor(level))
           .toInt();
   static int get correctAnswersInCurrentLevel =>
       Store.integer('qgame_level_correct')
-          .clamp(0, QuranGameConfig.questionsPerLevel)
+          .clamp(0, QuranGameConfig.questionsPerLevelFor(level))
           .toInt();
   static int get mistakesInCurrentLevel => Store.integer('qgame_level_mistakes')
-      .clamp(0, QuranGameConfig.questionsPerLevel)
+      .clamp(0, QuranGameConfig.questionsPerLevelFor(level))
       .toInt();
   static int get streak =>
       Store.integer('qgame_streak').clamp(0, 36500).toInt();
@@ -182,33 +190,66 @@ class QuranGameService {
       throw StateError('Daily challenge is already complete');
     }
     final safeLevel = requestedLevel.clamp(1, 100);
-    final pool = questions.where((q) => q.level == safeLevel).toList();
-    if (pool.isEmpty)
-      throw StateError('No question bank entries for level $safeLevel');
+    final levelTotal = daily
+        ? QuranGameConfig.dailyQuestions
+        : QuranGameConfig.questionsPerLevelFor(safeLevel);
+    final answered = daily ? dailyAnswered : questionsAnsweredInCurrentLevel;
+
+    final all = questions.where(_isPlayable).toList();
+    if (all.isEmpty) throw StateError('No playable questions available');
+
     final seenThisLevel = (Store.json(
       'qgame_level_history',
       <dynamic>[],
-    ) as List)
-        .cast<String>()
-        .toSet();
-    final candidates =
-        pool.where((q) => !seenThisLevel.contains(q.id)).toList();
+    ) as List).cast<String>().toSet();
+
     final dailySeen = daily && _dailyStateIsToday
         ? (Store.json('qgame_daily_question_ids', <dynamic>[]) as List)
-            .cast<String>()
-            .toSet()
+            .cast<String>().toSet()
         : <String>{};
-    final notAnsweredToday = candidates.where((q) => !dailySeen.contains(q.id));
-    final recent = history.take(4).toSet();
-    final available = daily
-        ? notAnsweredToday.toList()
-        : (candidates.isEmpty ? pool : candidates);
-    if (daily && available.isEmpty) {
-      throw StateError('No unanswered daily questions remain');
+
+    final recent = history.take(8).toSet();
+    final quranTarget = (levelTotal / 2).ceil();
+    final religiousTarget = levelTotal ~/ 2;
+    final quranAnswered = seenThisLevel.where((id) =>
+        all.any((q) => q.id == id && q.isQuran)).length;
+    final religiousAnswered = seenThisLevel.where((id) =>
+        all.any((q) => q.id == id && q.category == 'religious')).length;
+
+    String wantedCategory;
+    if (daily) {
+      wantedCategory = 'quran';
+    } else if (quranAnswered < quranTarget && religiousAnswered < religiousTarget) {
+      wantedCategory = quranAnswered <= religiousAnswered ? 'quran' : 'religious';
+    } else if (quranAnswered < quranTarget) {
+      wantedCategory = 'quran';
+    } else {
+      wantedCategory = 'religious';
     }
-    final fresh = available.where((q) => !recent.contains(q.id)).toList();
-    final source = fresh.isNotEmpty ? fresh : available;
-    return source[_random.nextInt(source.length)];
+
+    List<QuranGameQuestion> candidates = all
+        .where((q) => q.category == wantedCategory &&
+            !seenThisLevel.contains(q.id) &&
+            (!daily || !dailySeen.contains(q.id)))
+        .toList();
+
+    if (candidates.isEmpty) {
+      candidates = all
+          .where((q) => q.category == wantedCategory &&
+              (!daily || !dailySeen.contains(q.id)))
+          .toList();
+    }
+    if (candidates.isEmpty) throw StateError('No questions available');
+
+    final fresh = candidates.where((q) => !recent.contains(q.id)).toList();
+    final source = fresh.isNotEmpty ? fresh : candidates;
+    final picked = source[_random.nextInt(source.length)];
+
+    // Cloud questions are allowed to carry their own level; the active game
+    // level determines progression, so normalize the question level here.
+    return picked.level == safeLevel
+        ? picked
+        : picked.copyWith(level: safeLevel);
   }
 
   static int comboMultiplier(int value) => value >= 20
@@ -235,8 +276,8 @@ class QuranGameService {
         q.correctOption.trim().isEmpty ||
         !q.options.contains(q.correctOption) ||
         q.questionType.trim().isEmpty ||
-        !q.isQuran ||
-        !_isAllowedQuranType(q.questionType)) {
+        !_isAllowedType(q.questionType) ||
+        !(q.isQuran || q.category == 'religious')) {
       throw ArgumentError('Invalid Quran game question');
     }
     if (!daily && q.level != level)
@@ -252,7 +293,7 @@ class QuranGameService {
     }
     final alreadyAnswered = daily
         ? dailyDone || dailyAnswered >= QuranGameConfig.dailyQuestions
-        : questionsAnsweredInCurrentLevel >= QuranGameConfig.questionsPerLevel;
+        : questionsAnsweredInCurrentLevel >= QuranGameConfig.questionsPerLevelFor(level);
     if (alreadyAnswered) return {'points': 0, 'noor': 0, 'combo': combo};
     final levelHistory =
         (Store.json('qgame_level_history', <dynamic>[]) as List).cast<String>();
@@ -351,13 +392,13 @@ class QuranGameService {
   }
 
   static Future<bool> completeLevelIfReady() async {
-    if (questionsAnsweredInCurrentLevel != QuranGameConfig.questionsPerLevel)
+    if (questionsAnsweredInCurrentLevel != QuranGameConfig.questionsPerLevelFor(level))
       return false;
     if (Store.flag('qgame_level_completed_$level')) return false;
     await Store.setFlag('qgame_level_completed_$level', true);
     await _credit(QuranGameConfig.levelBonus, 'إكمال المستوى $level');
     final isPerfect =
-        correctAnswersInCurrentLevel == 10 && mistakesInCurrentLevel == 0;
+        correctAnswersInCurrentLevel == QuranGameConfig.questionsPerLevelFor(level) && mistakesInCurrentLevel == 0;
     if (isPerfect) {
       await Store.setInt('qgame_perfect_levels', perfectLevels + 1);
       await Store.setJson('qgame_perfect_level_ids', [
