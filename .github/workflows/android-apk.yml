@@ -1,4 +1,5 @@
 name: Build SAKINA APK
+# Keep this workflow as the source of APK artifacts consumed by publish-release.yml.
 
 on:
   push:
