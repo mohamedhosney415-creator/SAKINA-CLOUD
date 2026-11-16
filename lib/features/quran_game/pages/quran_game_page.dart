@@ -1012,7 +1012,7 @@ class _QuranGameQuizPageState extends State<QuranGameQuizPage> {
               content: Text('🏆 إنجاز جديد! أضيفت مكافأته إلى نور اللعبة ✨')),
         );
       }
-      if (widget.daily && correct!) {
+      if (widget.daily && correct! && QuranGameService.dailyAnswered >= QuranGameConfig.dailyQuestions) {
         final reward = await QuranGameService.completeDaily();
         if (mounted && reward > 0) {
           ScaffoldMessenger.of(context).showSnackBar(
@@ -1102,12 +1102,12 @@ class _QuranGameQuizPageState extends State<QuranGameQuizPage> {
   Widget build(BuildContext context) {
     final answered = selected != null;
     final count = widget.daily
-        ? (QuranGameService.dailyDone ? 1 : 0)
+        ? QuranGameService.dailyAnswered
         : QuranGameService.questionsAnsweredInCurrentLevel;
     return Scaffold(
       appBar: AppBar(
         title: Text(
-          widget.daily ? 'تحدي اليوم' : 'المستوى ${QuranGameService.level}',
+          widget.daily ? 'تحدي اليوم • ${QuranGameConfig.dailyQuestions} أسئلة' : 'المستوى ${QuranGameService.level}',
         ),
         actions: [
           Padding(
@@ -1131,7 +1131,7 @@ class _QuranGameQuizPageState extends State<QuranGameQuizPage> {
                 widget.daily
                     ? (QuranGameService.dailyDone
                         ? 'اكتمل تحدي اليوم'
-                        : 'تحدي مستقل • مرة واحدة يوميًا')
+                        : 'تحدي من ${QuranGameConfig.dailyQuestions} أسئلة • مرة واحدة يوميًا')
                     : 'سؤال ${min(count + (answered ? 0 : 1), 10)} من 10',
                 style: const TextStyle(fontWeight: FontWeight.w800),
               ),
@@ -1258,7 +1258,7 @@ class _QuranGameQuizPageState extends State<QuranGameQuizPage> {
           if (answered) ...[
             const SizedBox(height: 14),
             Panel(
-              onTap: next,
+              onTap: widget.daily && QuranGameService.dailyAnswered >= QuranGameConfig.dailyQuestions ? null : next,
               child: const Row(
                 mainAxisAlignment: MainAxisAlignment.center,
                 children: [
