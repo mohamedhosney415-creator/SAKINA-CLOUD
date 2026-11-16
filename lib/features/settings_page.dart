@@ -254,6 +254,19 @@ class SettingsPage extends StatelessWidget {
                   Text('${s.streakReminderHour.toString().padLeft(2, '0')}:00'),
               onTap: () => pickHour('streakReminderHour', s.streakReminderHour),
             ),
+            SwitchListTile(
+              secondary: const Icon(Icons.sports_esports_outlined),
+              title: const Text('تذكير تحدي سكينة'),
+              subtitle: const Text('تذكير واحد يوميًا بتحدي اللعبة'),
+              value: s.gameReminderOn,
+              onChanged: (v) => sw('gameReminderOn', v),
+            ),
+            ListTile(
+              leading: const Icon(Icons.schedule),
+              title: const Text('موعد تذكير اللعبة'),
+              subtitle: Text('\${s.gameReminderHour.toString().padLeft(2, '0')}:00'),
+              onTap: () => pickHour('gameReminderHour', s.gameReminderHour),
+            ),
             const SectionTitle('تذكيرات القرآن والأذكار والصيام'),
             SwitchListTile(
               secondary: const Icon(Icons.menu_book_outlined),
