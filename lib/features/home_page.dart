@@ -126,7 +126,7 @@ class _HomePageState extends State<HomePage> {
                     child: Column(
                         crossAxisAlignment: CrossAxisAlignment.start,
                         children: [
-                      Text('أكمل الآية',
+                      Text('اختبار سكينة الإسلامي',
                           style: TextStyle(
                               fontWeight: FontWeight.w900, fontSize: 15.5)),
                       SizedBox(height: 3),
@@ -152,12 +152,7 @@ class _HomePageState extends State<HomePage> {
                           fontSize: 18,
                           fontWeight: FontWeight.w800)),
                 ),
-                _GlassChip(
-                  icon: Icons.local_fire_department_rounded,
-                  iconColor: gold,
-                  label: '${ar(ActivityService.currentStreak)} يوم',
-                  onTap: () => go(context, const DailyAssistantPage()),
-                ),
+
               ]),
               const SizedBox(height: 4),
               Text('${fmtHijri(today)}  •  ${fmtDate(today)}',
@@ -226,38 +221,6 @@ class _HomePageState extends State<HomePage> {
               const SizedBox(height: 58),
             ]),
           ),
-          Padding(
-              padding: const EdgeInsets.fromLTRB(16, 16, 16, 0),
-              child: Panel(
-                  onTap: () => go(context, const DailyAssistantPage()),
-                  color: Color.alphaBlend(gold.withAlpha(30),
-                      Theme.of(context).colorScheme.surface),
-                  child: Row(children: [
-                    Container(
-                      width: 48,
-                      height: 48,
-                      decoration: BoxDecoration(
-                          shape: BoxShape.circle, color: gold.withAlpha(46)),
-                      child: const Icon(Icons.local_fire_department_rounded,
-                          color: goldDeep, size: 28),
-                    ),
-                    const SizedBox(width: 12),
-                    Expanded(
-                        child: Column(
-                            crossAxisAlignment: CrossAxisAlignment.start,
-                            children: [
-                          const Text('رحلتك مع سكينة',
-                              style: TextStyle(
-                                  fontWeight: FontWeight.w900, fontSize: 15.5)),
-                          const SizedBox(height: 2),
-                          Text(
-                              'سلسلة ${ar(ActivityService.currentStreak)} يوم • افتح برنامجك اليومي',
-                              style: TextStyle(
-                                  fontSize: 12.5,
-                                  color: cs.onSurface.withAlpha(165)))
-                        ])),
-                    Icon(Icons.chevron_left_rounded, color: goldDeep)
-                  ]))),
           const SectionTitle('مواقيت اليوم'),
           Padding(
             padding: const EdgeInsets.symmetric(horizontal: 16),
