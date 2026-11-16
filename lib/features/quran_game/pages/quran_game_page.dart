@@ -1156,15 +1156,31 @@ class _QuranGameQuizPageState extends State<QuranGameQuizPage> {
             child: Column(
               children: [
                 Text(
-                  'سورة ${q.surahName} • آية ${q.ayahNumber}',
+                  q.displayPrompt,
+                  textAlign: TextAlign.center,
                   style: TextStyle(
                     color: Theme.of(context).colorScheme.primary,
-                    fontWeight: FontWeight.w800,
+                    fontWeight: FontWeight.w900,
+                    fontSize: 15,
                   ),
                 ),
-                const SizedBox(height: 20),
+                const SizedBox(height: 10),
                 Text(
-                  answered ? q.fullAyah : q.maskedAyah,
+                  q.isQuran
+                      ? 'سورة ${q.surahName} • آية ${q.ayahNumber}'
+                      : q.category,
+                  textAlign: TextAlign.center,
+                  style: TextStyle(
+                    color: Theme.of(context).colorScheme.onSurface.withAlpha(150),
+                    fontSize: 11,
+                    fontWeight: FontWeight.w700,
+                  ),
+                ),
+                const SizedBox(height: 18),
+                Text(
+                  answered || !q.isCompleteWord
+                      ? q.fullAyah
+                      : q.maskedAyah,
                   textAlign: TextAlign.center,
                   textDirection: TextDirection.rtl,
                   style: const TextStyle(
@@ -1258,7 +1274,9 @@ class _QuranGameQuizPageState extends State<QuranGameQuizPage> {
           ],
           const SizedBox(height: 16),
           Text(
-            'النص القرآني مأخوذ حرفيًا من مصدر المصحف العثماني. التلاوة تستخدم مشغل سكينة المشترك.',
+            q.isQuran
+                ? 'النص القرآني مأخوذ حرفيًا من مصدر المصحف العثماني. التلاوة تستخدم مشغل سكينة المشترك.'
+                : 'اختبار سكينة الإسلامي • السؤال والمحتوى مُداران من لوحة المالك.',
             textAlign: TextAlign.center,
             style: TextStyle(
               fontSize: 11,
