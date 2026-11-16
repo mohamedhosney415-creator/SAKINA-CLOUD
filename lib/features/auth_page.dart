@@ -31,6 +31,8 @@ class _AuthPageState extends State<AuthPage> {
     try {
       if (register) {
         await CloudService.signUp(email.text.trim(), password.text);
+        // New accounts always begin the Quran game from level 1.
+        await QuranGameService.resetForNewAccount();
       } else {
         await CloudService.signIn(email.text.trim(), password.text);
       }
