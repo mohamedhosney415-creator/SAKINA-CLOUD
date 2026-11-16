@@ -264,7 +264,7 @@ class SettingsPage extends StatelessWidget {
             ListTile(
               leading: const Icon(Icons.schedule),
               title: const Text('موعد تذكير اللعبة'),
-              subtitle: Text('\${s.gameReminderHour.toString().padLeft(2, '0')}:00'),
+              subtitle: Text('${s.gameReminderHour.toString().padLeft(2, '0')}:00'),
               onTap: () => pickHour('gameReminderHour', s.gameReminderHour),
             ),
             const SectionTitle('تذكيرات القرآن والأذكار والصيام'),
