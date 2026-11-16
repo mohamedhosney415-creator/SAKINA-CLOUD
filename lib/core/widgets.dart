@@ -272,11 +272,13 @@ class SakinaNavBar extends StatelessWidget {
   final int index;
   final ValueChanged<int> onTap;
   final List<SakinaNavItem> items;
+  final int? centerIndex;
   const SakinaNavBar(
       {super.key,
       required this.index,
       required this.onTap,
-      required this.items});
+      required this.items,
+      this.centerIndex});
 
   @override
   Widget build(BuildContext context) {
@@ -300,55 +302,100 @@ class SakinaNavBar extends StatelessWidget {
           child: Row(children: [
             for (int i = 0; i < items.length; i++)
               Expanded(
-                child: Semantics(
-                  button: true,
-                  selected: i == index,
-                  label: items[i].label,
-                  child: InkWell(
-                    borderRadius: BorderRadius.circular(18),
-                    onTap: () => onTap(i),
-                    child: AnimatedContainer(
-                      duration: const Duration(milliseconds: 220),
-                      curve: Curves.easeOut,
-                      padding: const EdgeInsets.symmetric(vertical: 8),
-                      decoration: BoxDecoration(
-                        color: i == index
-                            ? cs.primary.withAlpha(dark ? 60 : 30)
-                            : Colors.transparent,
-                        borderRadius: BorderRadius.circular(18),
-                      ),
-                      child: Column(
-                          mainAxisSize: MainAxisSize.min,
-                          children: [
-                            Icon(
-                                i == index
-                                    ? items[i].activeIcon
-                                    : items[i].icon,
-                                size: 25,
-                                color: i == index
-                                    ? cs.primary
-                                    : cs.onSurface.withAlpha(140)),
-                            const SizedBox(height: 3),
-                            Text(items[i].label,
-                                maxLines: 1,
-                                style: TextStyle(
-                                    fontSize: 11.5,
-                                    fontWeight: i == index
-                                        ? FontWeight.w800
-                                        : FontWeight.w600,
-                                    color: i == index
-                                        ? cs.primary
-                                        : cs.onSurface.withAlpha(140))),
-                          ]),
-                    ),
-                  ),
-                ),
+                flex: centerIndex == null
+                    ? 1
+                    : i == centerIndex
+                        ? 2
+                        : i < centerIndex!
+                            ? 3
+                            : 2,
+                child: i == centerIndex
+                    ? _centerItem(context, i, cs)
+                    : _regularItem(context, i, cs, dark),
               ),
           ]),
         ),
       ),
     );
   }
+
+  Widget _regularItem(BuildContext context, int i, ColorScheme cs, bool dark) =>
+      Semantics(
+        button: true,
+        selected: i == index,
+        label: items[i].label,
+        child: InkWell(
+          borderRadius: BorderRadius.circular(18),
+          onTap: () => onTap(i),
+          child: AnimatedContainer(
+            duration: const Duration(milliseconds: 220),
+            curve: Curves.easeOut,
+            padding: const EdgeInsets.symmetric(vertical: 8),
+            decoration: BoxDecoration(
+              color: i == index
+                  ? cs.primary.withAlpha(dark ? 60 : 30)
+                  : Colors.transparent,
+              borderRadius: BorderRadius.circular(18),
+            ),
+            child: Column(mainAxisSize: MainAxisSize.min, children: [
+              Icon(i == index ? items[i].activeIcon : items[i].icon,
+                  size: 25,
+                  color: i == index ? cs.primary : cs.onSurface.withAlpha(140)),
+              const SizedBox(height: 3),
+              Text(items[i].label,
+                  maxLines: 1,
+                  style: TextStyle(
+                      fontSize: 11.5,
+                      fontWeight:
+                          i == index ? FontWeight.w800 : FontWeight.w600,
+                      color: i == index
+                          ? cs.primary
+                          : cs.onSurface.withAlpha(140))),
+            ]),
+          ),
+        ),
+      );
+
+  Widget _centerItem(BuildContext context, int i, ColorScheme cs) => Semantics(
+        button: true,
+        selected: i == index,
+        label: items[i].label,
+        child: InkWell(
+          borderRadius: BorderRadius.circular(24),
+          onTap: () => onTap(i),
+          child: Column(mainAxisSize: MainAxisSize.min, children: [
+            AnimatedContainer(
+              duration: const Duration(milliseconds: 220),
+              width: 40,
+              height: 40,
+              decoration: BoxDecoration(
+                color: i == index ? cs.primary : cs.surface,
+                shape: BoxShape.circle,
+                border: Border.all(color: cs.primary.withAlpha(100), width: 2),
+                boxShadow: [
+                  BoxShadow(
+                    color: cs.primary.withAlpha(i == index ? 80 : 30),
+                    blurRadius: i == index ? 14 : 6,
+                    offset: const Offset(0, 3),
+                  ),
+                ],
+              ),
+              child: Icon(
+                i == index ? items[i].activeIcon : items[i].icon,
+                size: 22,
+                color: i == index ? cs.onPrimary : cs.primary,
+              ),
+            ),
+            const SizedBox(height: 2),
+            Text(items[i].label,
+                maxLines: 1,
+                style: TextStyle(
+                    fontSize: 10.5,
+                    fontWeight: i == index ? FontWeight.w900 : FontWeight.w700,
+                    color: i == index ? cs.primary : cs.onSurface)),
+          ]),
+        ),
+      );
 }
 
 class EmptyState extends StatelessWidget {
@@ -367,7 +414,10 @@ class EmptyState extends StatelessWidget {
                 textAlign: TextAlign.center,
                 style: TextStyle(
                     height: 1.7,
-                    color: Theme.of(context).colorScheme.onSurface.withAlpha(150))),
+                    color: Theme.of(context)
+                        .colorScheme
+                        .onSurface
+                        .withAlpha(150))),
           ]),
         ),
       );
@@ -386,7 +436,8 @@ class DeveloperSignature extends StatelessWidget {
                   fontSize: 10,
                   fontWeight: FontWeight.w200,
                   letterSpacing: 1.2,
-                  color: Theme.of(context).colorScheme.onSurface.withAlpha(120))),
+                  color:
+                      Theme.of(context).colorScheme.onSurface.withAlpha(120))),
         ),
       );
 }
@@ -394,8 +445,8 @@ class DeveloperSignature extends StatelessWidget {
 void toast(BuildContext context, String msg) {
   ScaffoldMessenger.of(context)
     ..hideCurrentSnackBar()
-    ..showSnackBar(SnackBar(
-        content: Text(msg), behavior: SnackBarBehavior.floating));
+    ..showSnackBar(
+        SnackBar(content: Text(msg), behavior: SnackBarBehavior.floating));
 }
 
 /// زر مفضلة موحّد.
@@ -488,7 +539,8 @@ class ShareCardSheet extends StatefulWidget {
   final String title;
   final String text;
   final String source;
-  const ShareCardSheet({super.key, required this.title, required this.text, this.source = ''});
+  const ShareCardSheet(
+      {super.key, required this.title, required this.text, this.source = ''});
 
   @override
   State<ShareCardSheet> createState() => _ShareCardSheetState();
@@ -507,7 +559,8 @@ class _ShareCardSheetState extends State<ShareCardSheet> {
       final bytes = await image.toByteData(format: ui.ImageByteFormat.png);
       if (bytes == null) throw StateError('image');
       final dir = await getTemporaryDirectory();
-      final file = File('${dir.path}/sakina_card_${DateTime.now().millisecondsSinceEpoch}.png');
+      final file = File(
+          '${dir.path}/sakina_card_${DateTime.now().millisecondsSinceEpoch}.png');
       await file.writeAsBytes(bytes.buffer.asUint8List(), flush: true);
       await Share.shareXFiles([XFile(file.path)], text: 'من تطبيق سكينة');
     } catch (_) {
@@ -541,20 +594,26 @@ class _ShareCardSheetState extends State<ShareCardSheet> {
                 const SizedBox(height: 8),
                 Text(widget.title,
                     textAlign: TextAlign.center,
-                    style: const TextStyle(color: Colors.white, fontWeight: FontWeight.w800)),
+                    style: const TextStyle(
+                        color: Colors.white, fontWeight: FontWeight.w800)),
                 const SizedBox(height: 16),
                 Text(widget.text,
                     textAlign: TextAlign.center,
-                    style: const TextStyle(color: Colors.white, fontSize: 18, height: 1.9)),
+                    style: const TextStyle(
+                        color: Colors.white, fontSize: 18, height: 1.9)),
                 if (widget.source.isNotEmpty) ...[
                   const SizedBox(height: 10),
                   Text(widget.source,
                       textAlign: TextAlign.center,
-                      style: TextStyle(color: Colors.white.withAlpha(175), fontSize: 11)),
+                      style: TextStyle(
+                          color: Colors.white.withAlpha(175), fontSize: 11)),
                 ],
                 const SizedBox(height: 14),
                 const Text('سكينة • طمأنينة في كل يوم',
-                    style: TextStyle(color: gold, fontSize: 11, fontWeight: FontWeight.w700)),
+                    style: TextStyle(
+                        color: gold,
+                        fontSize: 11,
+                        fontWeight: FontWeight.w700)),
               ]),
             ),
           ),
@@ -564,7 +623,10 @@ class _ShareCardSheetState extends State<ShareCardSheet> {
             child: FilledButton.icon(
               onPressed: busy ? null : _share,
               icon: busy
-                  ? const SizedBox(width: 18, height: 18, child: CircularProgressIndicator(strokeWidth: 2))
+                  ? const SizedBox(
+                      width: 18,
+                      height: 18,
+                      child: CircularProgressIndicator(strokeWidth: 2))
                   : const Icon(Icons.ios_share_rounded),
               label: const Text('حفظ ومشاركة الصورة'),
             ),

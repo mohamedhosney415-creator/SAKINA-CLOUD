@@ -92,7 +92,9 @@ class QuranGameService {
       await GameCloudService.sync(preferRemote: true);
     } catch (_) {}
   }
-  static List<QuranGameQuestion> get questions => _remoteQuestions ?? quranGameBank;
+
+  static List<QuranGameQuestion> get questions =>
+      _remoteQuestions ?? quranGameBank;
   static int get level => Store.integer('qgame_level', 1).clamp(1, 100).toInt();
   static int get score =>
       Store.integer('qgame_score').clamp(0, 1 << 30).toInt();
@@ -125,10 +127,16 @@ class QuranGameService {
       Store.integer('qgame_longest_streak').clamp(0, 36500).toInt();
   static int get dailyChallenges =>
       Store.integer('qgame_daily_count').clamp(0, 1 << 30).toInt();
+  static bool get _dailyStateIsToday =>
+      Store.str('qgame_daily_date') == todayKey;
   static int get dailyAnswered =>
-      Store.integer('qgame_daily_answered').clamp(0, QuranGameConfig.dailyQuestions).toInt();
+      (_dailyStateIsToday ? Store.integer('qgame_daily_answered') : 0)
+          .clamp(0, QuranGameConfig.dailyQuestions)
+          .toInt();
   static int get dailyCorrect =>
-      Store.integer('qgame_daily_correct').clamp(0, QuranGameConfig.dailyQuestions).toInt();
+      (_dailyStateIsToday ? Store.integer('qgame_daily_correct') : 0)
+          .clamp(0, QuranGameConfig.dailyQuestions)
+          .toInt();
   static int get perfectLevels =>
       Store.integer('qgame_perfect_levels').clamp(0, 100).toInt();
   static int get achievementCount =>
@@ -146,7 +154,13 @@ class QuranGameService {
   static bool get dailyDone => Store.str('qgame_daily_done') == todayKey;
   static int get longestStreakSafe => max(longestStreak, streak);
 
-  static QuranGameQuestion nextQuestion({int requestedLevel = 1}) {
+  static QuranGameQuestion nextQuestion({
+    int requestedLevel = 1,
+    bool daily = false,
+  }) {
+    if (daily && dailyAnswered >= QuranGameConfig.dailyQuestions) {
+      throw StateError('Daily challenge is already complete');
+    }
     final safeLevel = requestedLevel.clamp(1, 100);
     final pool = questions.where((q) => q.level == safeLevel).toList();
     if (pool.isEmpty)
@@ -159,12 +173,21 @@ class QuranGameService {
         .toSet();
     final candidates =
         pool.where((q) => !seenThisLevel.contains(q.id)).toList();
+    final dailySeen = daily && _dailyStateIsToday
+        ? (Store.json('qgame_daily_question_ids', <dynamic>[]) as List)
+            .cast<String>()
+            .toSet()
+        : <String>{};
+    final notAnsweredToday = candidates.where((q) => !dailySeen.contains(q.id));
     final recent = history.take(4).toSet();
-    final fresh = (candidates.isEmpty ? pool : candidates)
-        .where((q) => !recent.contains(q.id))
-        .toList();
-    final source =
-        fresh.isNotEmpty ? fresh : (candidates.isNotEmpty ? candidates : pool);
+    final available = daily
+        ? notAnsweredToday.toList()
+        : (candidates.isEmpty ? pool : candidates);
+    if (daily && available.isEmpty) {
+      throw StateError('No unanswered daily questions remain');
+    }
+    final fresh = available.where((q) => !recent.contains(q.id)).toList();
+    final source = fresh.isNotEmpty ? fresh : available;
     return source[_random.nextInt(source.length)];
   }
 
@@ -196,6 +219,15 @@ class QuranGameService {
     }
     if (!daily && q.level != level)
       throw StateError('Question does not belong to the current level');
+    final dailyQuestionIds = _dailyStateIsToday
+        ? (Store.json('qgame_daily_question_ids', <dynamic>[]) as List)
+            .cast<String>()
+            .toSet()
+        : <String>{};
+    final isNewDailyQuestion = !dailyQuestionIds.contains(q.id);
+    if (daily && !isNewDailyQuestion && !retry) {
+      return {'points': 0, 'noor': 0, 'combo': combo};
+    }
     final alreadyAnswered = daily
         ? dailyDone || dailyAnswered >= QuranGameConfig.dailyQuestions
         : questionsAnsweredInCurrentLevel >= QuranGameConfig.questionsPerLevel;
@@ -232,12 +264,18 @@ class QuranGameService {
     await Store.setInt('qgame_score', score + points);
     await _credit(earnedNoor, 'إجابة صحيحة');
     if (daily) {
+      final answeredBefore = dailyAnswered;
+      final correctBefore = dailyCorrect;
+      final answeredAfter = answeredBefore + (isNewDailyQuestion ? 1 : 0);
+      if (isNewDailyQuestion) dailyQuestionIds.add(q.id);
+      await Store.setStr('qgame_daily_date', todayKey);
+      await Store.setJson(
+          'qgame_daily_question_ids', dailyQuestionIds.toList());
       await Store.setStr('qgame_daily_attempt_date', todayKey);
-      await Store.setInt('qgame_daily_answered', dailyAnswered + 1);
-      if (correct) {
-        await Store.setInt('qgame_daily_correct', dailyCorrect + 1);
-      }
-      if (dailyAnswered + 1 >= QuranGameConfig.dailyQuestions) {
+      await Store.setInt('qgame_daily_answered', answeredAfter);
+      await Store.setInt(
+          'qgame_daily_correct', correctBefore + (correct ? 1 : 0));
+      if (answeredAfter >= QuranGameConfig.dailyQuestions) {
         await Store.setStr('qgame_daily_success_date', todayKey);
       }
     }
@@ -322,7 +360,8 @@ class QuranGameService {
     await _checkAchievements();
     await GameCloudService.recordEvent(
       type: isPerfect ? 'perfect_level' : 'level_complete',
-      amount: QuranGameConfig.levelBonus + (isPerfect ? QuranGameConfig.perfectBonus : 0),
+      amount: QuranGameConfig.levelBonus +
+          (isPerfect ? QuranGameConfig.perfectBonus : 0),
       metadata: {'level': level},
     ).catchError((_) {});
     await _syncCloud();
@@ -534,6 +573,8 @@ class QuranGameService {
       'qgame_level_correct',
       'qgame_level_mistakes',
       'qgame_daily_done',
+      'qgame_daily_date',
+      'qgame_daily_question_ids',
       'qgame_daily_attempt_date',
       'qgame_daily_success_date',
       'qgame_daily_answered',

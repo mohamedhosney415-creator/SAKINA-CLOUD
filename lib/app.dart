@@ -13,6 +13,7 @@ import 'features/home_page.dart';
 import 'features/more_page.dart';
 import 'features/prayer_page.dart';
 import 'features/quran_page.dart';
+import 'features/quran_game/pages/quran_game_page.dart';
 import 'services/notification_service.dart';
 import 'services/backup_service.dart';
 import 'cloud/cloud_service.dart';
@@ -98,8 +99,7 @@ class _SakinaAppState extends State<SakinaApp> with WidgetsBindingObserver {
           theme: buildTheme(Brightness.light, s.accent, s.font),
           darkTheme: buildTheme(Brightness.dark, s.accent, s.font),
           builder: (context, child) => Directionality(
-            textDirection:
-                s.isEnglish ? TextDirection.ltr : TextDirection.rtl,
+            textDirection: s.isEnglish ? TextDirection.ltr : TextDirection.rtl,
             child: MediaQuery(
               data: MediaQuery.of(context)
                   .copyWith(textScaler: TextScaler.linear(s.fontScale)),
@@ -134,6 +134,7 @@ class _ShellState extends State<Shell> {
     const pages = <Widget>[
       HomePage(),
       PrayerPage(),
+      QuranGamePage(),
       QuranPage(),
       AzkarPage(),
       MorePage(),
@@ -181,12 +182,15 @@ class _ShellState extends State<Shell> {
       ),
       bottomNavigationBar: SakinaNavBar(
         index: index,
+        centerIndex: 2,
         onTap: (i) => setState(() => index = i),
         items: [
           SakinaNavItem(s.isEnglish ? 'Home' : 'الرئيسية', Icons.home_outlined,
               Icons.home_rounded),
           SakinaNavItem(s.isEnglish ? 'Prayer' : 'الصلاة',
               Icons.access_time_rounded, Icons.access_time_filled_rounded),
+          SakinaNavItem(s.isEnglish ? 'Game' : 'اللعبة',
+              Icons.sports_esports_outlined, Icons.sports_esports_rounded),
           SakinaNavItem(s.isEnglish ? 'Quran' : 'القرآن',
               Icons.menu_book_outlined, Icons.menu_book_rounded),
           SakinaNavItem(s.isEnglish ? 'Adhkar' : 'الأذكار',

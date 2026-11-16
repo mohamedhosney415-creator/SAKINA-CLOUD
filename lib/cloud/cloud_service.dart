@@ -99,7 +99,7 @@ class CloudService {
   static Future<List<Map<String, dynamic>>> adminUsers() async {
     final rows = await client
         .from('profiles')
-        .select('*')
+        .select('id,email,display_name,role,created_at,last_seen_at')
         .order('created_at', ascending: false);
     return List<Map<String, dynamic>>.from(rows);
   }

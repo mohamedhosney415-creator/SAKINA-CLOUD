@@ -24,6 +24,7 @@ class SurahReaderPage extends StatefulWidget {
 class _SurahReaderPageState extends State<SurahReaderPage> {
   late Future<List<Ayah>> fut;
   final sc = ScrollController();
+  int displayMode = Store.integer('quran_display_mode', 0);
   double? restore;
   bool restored = false;
   bool downloaded = false;
@@ -49,6 +50,64 @@ class _SurahReaderPageState extends State<SurahReaderPage> {
     final d =
         await QuranService.isDownloaded(Settings.i.reciter, widget.number);
     if (mounted) setState(() => downloaded = d);
+  }
+
+  Future<void> _setDisplayMode(int mode) async {
+    await Store.setInt('quran_display_mode', mode);
+    if (mounted) setState(() => displayMode = mode);
+  }
+
+  Widget _displayModeMenu() => PopupMenuButton<int>(
+        tooltip: 'نمط عرض القرآن',
+        initialValue: displayMode,
+        icon: const Icon(Icons.view_agenda_outlined),
+        onSelected: _setDisplayMode,
+        itemBuilder: (_) => const [
+          PopupMenuItem(value: 0, child: Text('عرض متصل')),
+          PopupMenuItem(value: 1, child: Text('كل آية في بطاقة')),
+          PopupMenuItem(value: 2, child: Text('قراءة مريحة')),
+        ],
+      );
+
+  Widget _ayahView(Ayah a, TextStyle style, ColorScheme cs) {
+    final marked = Favorites.i.has('bookmark', '${widget.number}:${a.n}') ||
+        QuranNotesStore.isBookmarked(widget.number, a.n);
+    final text = Text.rich(
+      TextSpan(children: [
+        TextSpan(text: a.text),
+        TextSpan(
+          text: ' ﴿${ar(a.n)}﴾ ',
+          style: const TextStyle(color: gold, fontWeight: FontWeight.w800),
+        ),
+      ]),
+      textAlign: TextAlign.justify,
+      style: style,
+    );
+    final child = displayMode == 1
+        ? Card(
+            margin: const EdgeInsets.symmetric(vertical: 5),
+            color: marked ? gold.withAlpha(34) : cs.surfaceContainerHighest,
+            child: Padding(
+              padding: const EdgeInsets.fromLTRB(12, 10, 12, 10),
+              child: text,
+            ),
+          )
+        : Container(
+            padding: EdgeInsets.symmetric(
+                vertical: displayMode == 2 ? 10 : 4, horizontal: 6),
+            margin: EdgeInsets.symmetric(vertical: displayMode == 2 ? 4 : 2),
+            decoration: BoxDecoration(
+              color: marked ? gold.withAlpha(40) : null,
+              borderRadius: BorderRadius.circular(12),
+            ),
+            child: text,
+          );
+    return InkWell(
+      key: _ayahKeys[a.n],
+      borderRadius: BorderRadius.circular(12),
+      onTap: () => _ayahSheet(a),
+      child: child,
+    );
   }
 
   Future<void> _saveLast({int? ayah, bool markActivity = false}) async {
@@ -389,6 +448,7 @@ class _SurahReaderPageState extends State<SurahReaderPage> {
                   color: downloaded ? gold : null),
               onPressed: _download,
             ),
+          _displayModeMenu(),
           IconButton(
               tooltip: 'انتقال إلى آية',
               icon: const Icon(Icons.pin_drop_outlined),
@@ -465,6 +525,9 @@ class _SurahReaderPageState extends State<SurahReaderPage> {
               }
               _tryRestore();
               final size = Settings.i.quranFont;
+              final textStyle = quranStyle(size, cs.onSurface).copyWith(
+                    height: displayMode == 2 ? 2.15 : 1.7,
+                  );
               return NotificationListener<ScrollEndNotification>(
                 onNotification: (_) {
                   _saveLast(markActivity: true);
@@ -510,38 +573,7 @@ class _SurahReaderPageState extends State<SurahReaderPage> {
                           ),
                       ]),
                     ),
-                    for (final a in ayahs)
-                      InkWell(
-                        key: _ayahKeys[a.n],
-                        borderRadius: BorderRadius.circular(12),
-                        onTap: () => _ayahSheet(a),
-                        child: Container(
-                          padding: const EdgeInsets.symmetric(
-                              vertical: 4, horizontal: 6),
-                          margin: const EdgeInsets.symmetric(vertical: 2),
-                          decoration: BoxDecoration(
-                            color: (Favorites.i.has('bookmark',
-                                        '${widget.number}:${a.n}') ||
-                                    QuranNotesStore.isBookmarked(
-                                        widget.number, a.n))
-                                ? gold.withAlpha(40)
-                                : null,
-                            borderRadius: BorderRadius.circular(12),
-                          ),
-                          child: Text.rich(
-                            TextSpan(children: [
-                              TextSpan(text: a.text),
-                              TextSpan(
-                                  text: ' ﴿${ar(a.n)}﴾ ',
-                                  style: const TextStyle(
-                                      color: gold,
-                                      fontWeight: FontWeight.w800)),
-                            ]),
-                            textAlign: TextAlign.justify,
-                            style: quranStyle(size, cs.onSurface),
-                          ),
-                        ),
-                      ),
+                    for (final a in ayahs) _ayahView(a, textStyle, cs),
                   ],
                 ),
               );

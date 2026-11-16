@@ -982,7 +982,10 @@ class _QuranGameQuizPageState extends State<QuranGameQuizPage> {
   @override
   void initState() {
     super.initState();
-    q = QuranGameService.nextQuestion(requestedLevel: QuranGameService.level);
+    q = QuranGameService.nextQuestion(
+      requestedLevel: QuranGameService.level,
+      daily: widget.daily,
+    );
   }
 
   @override
@@ -1012,13 +1015,13 @@ class _QuranGameQuizPageState extends State<QuranGameQuizPage> {
               content: Text('🏆 إنجاز جديد! أضيفت مكافأته إلى نور اللعبة ✨')),
         );
       }
-      if (widget.daily && correct! && QuranGameService.dailyAnswered >= QuranGameConfig.dailyQuestions) {
+      if (widget.daily &&
+          QuranGameService.dailyAnswered >= QuranGameConfig.dailyQuestions) {
         final reward = await QuranGameService.completeDaily();
         if (mounted && reward > 0) {
           ScaffoldMessenger.of(context).showSnackBar(
             SnackBar(
-                content:
-                    Text('🎉 أحسنت! +$reward نور اللعبة ✨ • تحدي اليوم اكتمل')),
+                content: Text('🎉 اكتمل تحدي اليوم! +$reward نور اللعبة ✨')),
           );
         }
       }
@@ -1056,7 +1059,10 @@ class _QuranGameQuizPageState extends State<QuranGameQuizPage> {
   void next() {
     AudioCtl.i.stop();
     setState(() {
-      q = QuranGameService.nextQuestion(requestedLevel: QuranGameService.level);
+      q = QuranGameService.nextQuestion(
+        requestedLevel: QuranGameService.level,
+        daily: widget.daily,
+      );
       selected = null;
       correct = null;
       showHint = false;
@@ -1107,7 +1113,9 @@ class _QuranGameQuizPageState extends State<QuranGameQuizPage> {
     return Scaffold(
       appBar: AppBar(
         title: Text(
-          widget.daily ? 'تحدي اليوم • ${QuranGameConfig.dailyQuestions} أسئلة' : 'المستوى ${QuranGameService.level}',
+          widget.daily
+              ? 'تحدي اليوم • ${QuranGameConfig.dailyQuestions} أسئلة'
+              : 'المستوى ${QuranGameService.level}',
         ),
         actions: [
           Padding(
@@ -1171,16 +1179,15 @@ class _QuranGameQuizPageState extends State<QuranGameQuizPage> {
                       : q.category,
                   textAlign: TextAlign.center,
                   style: TextStyle(
-                    color: Theme.of(context).colorScheme.onSurface.withAlpha(150),
+                    color:
+                        Theme.of(context).colorScheme.onSurface.withAlpha(150),
                     fontSize: 11,
                     fontWeight: FontWeight.w700,
                   ),
                 ),
                 const SizedBox(height: 18),
                 Text(
-                  answered || !q.isCompleteWord
-                      ? q.fullAyah
-                      : q.maskedAyah,
+                  answered || !q.isCompleteWord ? q.fullAyah : q.maskedAyah,
                   textAlign: TextAlign.center,
                   textDirection: TextDirection.rtl,
                   style: const TextStyle(
@@ -1258,12 +1265,20 @@ class _QuranGameQuizPageState extends State<QuranGameQuizPage> {
           if (answered) ...[
             const SizedBox(height: 14),
             Panel(
-              onTap: widget.daily && QuranGameService.dailyAnswered >= QuranGameConfig.dailyQuestions ? null : next,
-              child: const Row(
+              onTap: widget.daily &&
+                      QuranGameService.dailyAnswered >=
+                          QuranGameConfig.dailyQuestions
+                  ? () => Navigator.of(context).pop()
+                  : next,
+              child: Row(
                 mainAxisAlignment: MainAxisAlignment.center,
                 children: [
                   Text(
-                    'السؤال التالي',
+                    widget.daily &&
+                            QuranGameService.dailyAnswered >=
+                                QuranGameConfig.dailyQuestions
+                        ? 'اكتمل التحدي • العودة'
+                        : 'السؤال التالي',
                     style: TextStyle(fontWeight: FontWeight.w900),
                   ),
                   SizedBox(width: 8),

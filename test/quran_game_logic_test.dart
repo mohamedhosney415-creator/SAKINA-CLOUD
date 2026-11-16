@@ -145,4 +145,71 @@ void main() {
     expect(QuranGameService.noor, balance);
     expect(QuranGameService.dailyChallenges, 1);
   });
+
+  test('daily progress rolls over when the stored date is not today', () async {
+    await Store.setStr('qgame_daily_date', '2000-01-01');
+    await Store.setInt('qgame_daily_answered', QuranGameConfig.dailyQuestions);
+    await Store.setInt('qgame_daily_correct', QuranGameConfig.dailyQuestions);
+    await Store.setJson('qgame_daily_question_ids', ['old-question']);
+
+    expect(QuranGameService.dailyAnswered, 0);
+    expect(QuranGameService.dailyCorrect, 0);
+    await QuranGameService.answer(quranGameBank.first, true, daily: true);
+    expect(QuranGameService.dailyAnswered, 1);
+    expect(Store.str('qgame_daily_date'), QuranGameService.todayKey);
+  });
+
+  test('a daily question can only advance challenge progress once', () async {
+    final question = quranGameBank.first;
+    await QuranGameService.answer(question, true, daily: true);
+    final balance = QuranGameService.noor;
+
+    final duplicate =
+        await QuranGameService.answer(question, true, daily: true);
+
+    expect(duplicate['noor'], 0);
+    expect(QuranGameService.dailyAnswered, 1);
+    expect(QuranGameService.totalQuestions, 1);
+    expect(QuranGameService.noor, balance);
+  });
+
+  test('a daily second chance does not count the same question twice',
+      () async {
+    final question = quranGameBank.first;
+    await QuranGameService.answer(question, false, daily: true);
+    await Store.setFlag('qgame_retry_allowed_${question.id}', true);
+
+    await QuranGameService.answer(question, true, daily: true, retry: true);
+
+    expect(QuranGameService.dailyAnswered, 1);
+    expect(QuranGameService.dailyCorrect, 1);
+    expect(QuranGameService.totalQuestions, 2);
+  });
+
+  test('five distinct wrong answers still complete the daily challenge once',
+      () async {
+    for (final question in quranGameBank.take(QuranGameConfig.dailyQuestions)) {
+      await QuranGameService.answer(question, false, daily: true);
+    }
+
+    expect(QuranGameService.dailyAnswered, QuranGameConfig.dailyQuestions);
+    expect(
+      () => QuranGameService.nextQuestion(daily: true),
+      throwsStateError,
+    );
+    final reward = await QuranGameService.completeDaily();
+    expect(reward, greaterThanOrEqualTo(QuranGameConfig.dailyBonus));
+    final balance = QuranGameService.noor;
+    expect(await QuranGameService.completeDaily(), 0);
+    expect(QuranGameService.noor, balance);
+  });
+
+  test('next daily question excludes question IDs answered today', () async {
+    final first = quranGameBank.first;
+    await QuranGameService.answer(first, true, daily: true);
+
+    final next = QuranGameService.nextQuestion(daily: true);
+
+    expect(next.id, isNot(first.id));
+  });
 }

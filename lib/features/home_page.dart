@@ -24,7 +24,6 @@ import 'permission_banner.dart';
 import 'qibla_page.dart';
 import 'tasbeeh_page.dart';
 import 'quran_page.dart';
-import 'daily_assistant_page.dart';
 import 'more_page.dart';
 import 'quran_game/pages/quran_game_page.dart';
 
@@ -152,7 +151,6 @@ class _HomePageState extends State<HomePage> {
                           fontSize: 18,
                           fontWeight: FontWeight.w800)),
                 ),
-
               ]),
               const SizedBox(height: 4),
               Text('${fmtHijri(today)}  •  ${fmtDate(today)}',
