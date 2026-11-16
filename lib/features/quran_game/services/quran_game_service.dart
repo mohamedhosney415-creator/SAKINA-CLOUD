@@ -503,6 +503,17 @@ class QuranGameService {
   static String hintFor(QuranGameQuestion q) =>
       'تلميح: الكلمة الناقصة تبدأ بـ «${q.hiddenWord.substring(0, 1)}»';
 
+  /// Clears all local game state after a successful account registration.
+  /// The newly created account must never inherit another user's progress.
+  static Future<void> resetForNewAccount() async {
+    final keys = Store.exportAll().keys
+        .where((key) => key.startsWith('qgame_'))
+        .toList(growable: false);
+    for (final key in keys) {
+      await Store.remove(key);
+    }
+  }
+
   static Future<void> reset() async {
     final keys = [
       'qgame_level',
