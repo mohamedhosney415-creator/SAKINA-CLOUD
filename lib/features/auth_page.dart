@@ -25,11 +25,13 @@ class _AuthPageState extends State<AuthPage> {
   @override
   void initState() {
     super.initState();
-    authSubscription = CloudService.client.auth.onAuthStateChange.listen((state) {
-      if (state.event == AuthChangeEvent.signedIn && state.session != null) {
-        _completeLogin();
-      }
-    });
+    if (CloudService.enabled) {
+      authSubscription = CloudService.client.auth.onAuthStateChange.listen((state) {
+        if (state.event == AuthChangeEvent.signedIn && state.session != null) {
+          _completeLogin();
+        }
+      });
+    }
   }
 
   Future<void> _completeLogin() async {
