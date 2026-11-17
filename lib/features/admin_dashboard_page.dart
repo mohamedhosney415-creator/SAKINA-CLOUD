@@ -4,6 +4,7 @@ import '../cloud/cloud_service.dart';
 import '../cloud/game_cloud_service.dart';
 import '../core/theme.dart';
 import '../core/widgets.dart';
+import '../services/update_service.dart';
 
 class AdminDashboardPage extends StatefulWidget {
   const AdminDashboardPage({super.key});
@@ -18,6 +19,10 @@ class _AdminDashboardPageState extends State<AdminDashboardPage> {
   Map<String, dynamic> summary = {};
   List<Map<String, dynamic>> users = [];
   List<Map<String, dynamic>> questions = [];
+  SakinaUpdateInfo? releaseInfo;
+  List<Map<String, dynamic>> outdatedUsers = [];
+  int unreportedUsers = 0;
+  bool scanningVersions = false;
 
   @override
   void initState() {
@@ -47,6 +52,48 @@ class _AdminDashboardPageState extends State<AdminDashboardPage> {
         loading = false;
         error = 'تعذر تحميل لوحة المالك. تأكد من صلاحيات الحساب والاتصال.';
       });
+    }
+  }
+
+  Future<void> _scanVersions() async {
+    setState(() => scanningVersions = true);
+    try {
+      final latest = await UpdateService.check();
+      if (latest == null) {
+        throw StateError('تعذر قراءة ملف الإصدار المنشور.');
+      }
+      final refreshedUsers = await CloudService.adminUsers();
+      final outdated = refreshedUsers.where((user) {
+        return UpdateService.isOutdatedInstall(
+          user['app_version']?.toString(),
+          int.tryParse(user['build_number']?.toString() ?? ''),
+          latest,
+        );
+      }).toList();
+      final unreported = refreshedUsers
+          .where((user) => (user['app_version']?.toString() ?? '').isEmpty)
+          .length;
+      if (!mounted) return;
+      setState(() {
+        users = refreshedUsers;
+        releaseInfo = latest;
+        outdatedUsers = outdated;
+        unreportedUsers = unreported;
+        scanningVersions = false;
+      });
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: Text(
+            'تم الفحص: ${outdated.length} نسخة قديمة، و${unreported} مستخدم لم يسجل إصدار جهازه بعد.',
+          ),
+        ),
+      );
+    } catch (e) {
+      if (!mounted) return;
+      setState(() => scanningVersions = false);
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(content: Text('فشل فحص الإصدارات: $e')),
+      );
     }
   }
 
@@ -190,6 +237,49 @@ class _AdminDashboardPageState extends State<AdminDashboardPage> {
             ],
           ),
         ),
+        const SizedBox(height: 16),
+        Panel(
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              const Text('تحديثات التطبيق', style: TextStyle(fontWeight: FontWeight.w900, fontSize: 16)),
+              const SizedBox(height: 6),
+              const Text('افحص الإصدارات التي سجلتها أجهزة المستخدمين وقارنها بآخر نسخة منشورة.'),
+              const SizedBox(height: 12),
+              SizedBox(
+                width: double.infinity,
+                child: FilledButton.icon(
+                  onPressed: scanningVersions ? null : _scanVersions,
+                  icon: scanningVersions
+                      ? const SizedBox(width: 18, height: 18, child: CircularProgressIndicator(strokeWidth: 2))
+                      : const Icon(Icons.system_update_alt_rounded),
+                  label: Text(scanningVersions ? 'جارٍ فحص الأجهزة...' : 'فحص إصدارات المستخدمين'),
+                ),
+              ),
+              if (releaseInfo != null) ...[
+                const SizedBox(height: 12),
+                _line('أحدث إصدار منشور', '${releaseInfo!.latestVersion}+${releaseInfo!.latestBuildNumber}'),
+                _line('أجهزة بإصدار قديم', '${outdatedUsers.length}'),
+                _line('أجهزة لم تسجل إصدارها', '${unreportedUsers}'),
+              ],
+              if (outdatedUsers.isNotEmpty) ...[
+                const Divider(height: 22),
+                const Text('المستخدمون الذين يحتاجون إلى تحديث', style: TextStyle(fontWeight: FontWeight.w800)),
+                for (final user in outdatedUsers.take(8))
+                  Padding(
+                    padding: const EdgeInsets.only(top: 7),
+                    child: Text(
+                      (user['display_name'] ?? user['email'] ?? 'مستخدم').toString() + ' — ' + user['app_version'].toString() + '+' + (user['build_number'] ?? 0).toString(),
+                      maxLines: 1,
+                      overflow: TextOverflow.ellipsis,
+                    ),
+                  ),
+                if (outdatedUsers.length > 8)
+                  Text('و${outdatedUsers.length - 8} مستخدمين آخرين...'),
+              ],
+            ],
+          ),
+        ),
       ],
     );
   }
@@ -227,7 +317,17 @@ class _AdminDashboardPageState extends State<AdminDashboardPage> {
                 name.isEmpty ? '${u['email'] ?? 'مستخدم'}' : name,
                 style: const TextStyle(fontWeight: FontWeight.w800),
               ),
-              subtitle: Text('${u['email'] ?? 'بدون بريد'}\nآخر نشاط: ${_date(u['last_seen_at'])}'),
+              subtitle: Text(
+                (u['email'] ?? 'بدون بريد').toString() +
+                    '\nالإصدار: ' +
+                    (u['app_version'] == null
+                        ? 'لم يسجل بعد'
+                        : u['app_version'].toString() +
+                            '+' +
+                            (u['build_number'] ?? 0).toString()) +
+                    '\nآخر نشاط: ' +
+                    _date(u['last_seen_at']),
+              ),
               isThreeLine: true,
               trailing: role == 'owner'
                   ? const Chip(label: Text('مالك'))
