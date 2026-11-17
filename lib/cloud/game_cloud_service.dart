@@ -145,13 +145,47 @@ class GameCloudService {
     };
   }
 
+  static Future<Map<String, dynamic>> controlState() async {
+    if (!enabled) return const {'game_enabled': true, 'maintenance_message': ''};
+    final row = await client.from('app_control').select('game_enabled,maintenance_message,updated_at').eq('id', 1).maybeSingle();
+    return row == null ? const {'game_enabled': true, 'maintenance_message': ''} : Map<String, dynamic>.from(row);
+  }
+
+  static Future<void> ownerSetGameEnabled(bool enabled, {String? message}) async {
+    if (!GameCloudService.enabled || !await CloudService.isOwner()) throw Exception('Owner access required');
+    final u = client.auth.currentUser!;
+    await client.from('app_control').update({
+      'game_enabled': enabled,
+      if (message != null) 'maintenance_message': message,
+      'updated_at': DateTime.now().toUtc().toIso8601String(),
+      'updated_by': u.id,
+    }).eq('id', 1);
+  }
+
+  static Future<void> ownerSetPlayerLevel({required String userId, required int level}) async {
+    if (!enabled || !await CloudService.isOwner()) throw Exception('Owner access required');
+    await client.rpc('game_owner_set_player_level', params: {
+      'target_user': userId,
+      'target_level': level,
+    });
+  }
+
   static Future<List<Map<String, dynamic>>> ownerPlayers() async {
     if (!enabled || !await CloudService.isOwner()) throw Exception('Owner access required');
     final rows = await client
         .from('game_admin_player_stats')
         .select('user_id,email,display_name,updated_at,level,score,noor,total_questions,correct_answers,streak')
         .order('updated_at', ascending: false);
-    return List<Map<String, dynamic>>.from(rows);
+    final result = List<Map<String, dynamic>>.from(rows);
+    final progress = await client.from('game_progress').select('user_id,highest_level');
+    final highest = <String, int>{
+      for (final row in progress)
+        '${row['user_id']}': (row['highest_level'] as num?)?.toInt() ?? 1,
+    };
+    for (final player in result) {
+      player['highest_level'] = highest['${player['user_id']}'] ?? (player['level'] as num?)?.toInt() ?? 1;
+    }
+    return result;
   }
 
   static Future<List<Map<String, dynamic>>> ownerQuestions({int? level}) async {
