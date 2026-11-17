@@ -198,7 +198,6 @@ class QuranGameService {
     final levelTotal = daily
         ? QuranGameConfig.dailyQuestions
         : QuranGameConfig.questionsPerLevelFor(safeLevel);
-    final answered = daily ? dailyAnswered : questionsAnsweredInCurrentLevel;
 
     final all = questions.where(_isPlayable).toList();
     if (all.isEmpty) throw StateError('No playable questions available');
