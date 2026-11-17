@@ -44,6 +44,29 @@ jobs:
       - name: Patch Android
         run: python3 tool/patch_android.py
 
+      - name: Configure persistent Android release signing
+        env:
+          ANDROID_KEYSTORE_BASE64: ${{ secrets.ANDROID_KEYSTORE_BASE64 }}
+          ANDROID_KEYSTORE_PASSWORD: ${{ secrets.ANDROID_KEYSTORE_PASSWORD }}
+          ANDROID_KEY_ALIAS: ${{ secrets.ANDROID_KEY_ALIAS }}
+          ANDROID_KEY_PASSWORD: ${{ secrets.ANDROID_KEY_PASSWORD }}
+        run: |
+          set -euo pipefail
+          if [ -n "$ANDROID_KEYSTORE_BASE64" ] && [ -n "$ANDROID_KEYSTORE_PASSWORD" ] && [ -n "$ANDROID_KEY_ALIAS" ] && [ -n "$ANDROID_KEY_PASSWORD" ]; then
+            printf '%s' "$ANDROID_KEYSTORE_BASE64" | base64 --decode > android/upload-keystore.jks
+            cat > android/key.properties <<EOF
+          storeFile=../upload-keystore.jks
+          storePassword=$ANDROID_KEYSTORE_PASSWORD
+          keyAlias=$ANDROID_KEY_ALIAS
+          keyPassword=$ANDROID_KEY_PASSWORD
+          EOF
+            echo "SAKINA_SIGNING_READY=true" >> "$GITHUB_ENV"
+            echo "Persistent Android release signing is configured."
+          else
+            echo "SAKINA_SIGNING_READY=false" >> "$GITHUB_ENV"
+            echo "::warning::No persistent release keystore configured. This build is for branch testing only and will not be published as a stable download."
+          fi
+
       - name: Get packages
         run: flutter pub get
 
@@ -116,7 +139,8 @@ jobs:
           set -euo pipefail
           APKSIGNER="$(find "$ANDROID_HOME/build-tools" -type f -name apksigner | sort -V | tail -n 1)"
           test -x "$APKSIGNER"
-          for apk in build/app/outputs/flutter-apk/app-*-release.apk; do
+          for apk in build/app/outputs/flutter-apk/app-*-release.apk build/app/outputs/flutter-apk/app-release.apk; do
+            [ -f "$apk" ] || continue
             echo "Checking $apk"
             "$APKSIGNER" verify --verbose --print-certs "$apk"
           done
