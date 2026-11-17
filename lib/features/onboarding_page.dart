@@ -65,7 +65,7 @@ class _OnboardingPageState extends State<OnboardingPage> {
           child: Icon(Icons.nights_stay_rounded, size: 48, color: cs.primary),
         ),
         const SizedBox(height: 22),
-        const Text('سكينة',
+        const Text('سَكِينَة',
             style: TextStyle(fontSize: 30, fontWeight: FontWeight.w900)),
         const SizedBox(height: 8),
         Text('رفيقك إلى الطمأنينة اليومية',
@@ -99,7 +99,7 @@ class _OnboardingPageState extends State<OnboardingPage> {
             const SakinaIconBadge(
                 icon: Icons.waving_hand_rounded, color: gold, size: 66, iconSize: 32),
             const SizedBox(height: 20),
-            const Text('خلّينا نجهز سكينة ليومك',
+            const Text('خلّينا نجهز سَكِينَة ليومك',
                 style: TextStyle(fontSize: 23, fontWeight: FontWeight.w900)),
             const SizedBox(height: 10),
             Text('الاسم اختياري وسيظهر في التحية فقط.',
@@ -238,7 +238,7 @@ class _OnboardingPageState extends State<OnboardingPage> {
                           : Icon(step == 2
                               ? Icons.check_rounded
                               : Icons.arrow_back_rounded),
-                      label: Text(step == 2 ? 'ابدأ استخدام سكينة' : 'متابعة'),
+                      label: Text(step == 2 ? 'ابدأ استخدام سَكِينَة' : 'متابعة'),
                     ),
                   ],
                 ),

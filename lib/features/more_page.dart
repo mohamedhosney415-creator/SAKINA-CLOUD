@@ -64,7 +64,7 @@ class _MorePageState extends State<MorePage> {
 
   List<_MoreGroup> _groups() => [
         _MoreGroup('القرآن والمكتبة', [
-          _MoreItem('اختبار سكينة الإسلامي', 'اختبر ذاكرتك القرآنية واجمع نورًا',
+          _MoreItem('اختبار سَكِينَة الإسلامي', 'اختبر ذاكرتك القرآنية واجمع نورًا',
               Icons.auto_stories_rounded, const QuranGamePage()),
           _MoreItem('البحث الشامل', 'ابحث في القرآن والأذكار من مكان واحد',
               Icons.search_rounded, const GlobalSearchPage()),
@@ -80,9 +80,9 @@ class _MorePageState extends State<MorePage> {
               Icons.favorite_rounded, const FavoritesPage()),
         ]),
         _MoreGroup('العبادة اليومية', [
-          _MoreItem('مساعد سكينة اليومي', 'برنامج القرآن والأذكار والتسبيح',
+          _MoreItem('مساعد سَكِينَة اليومي', 'برنامج القرآن والأذكار والتسبيح',
               Icons.today_rounded, const DailyAssistantPage()),
-          _MoreItem('تحديات سكينة', 'تحديات اختيارية للاستمرار',
+          _MoreItem('تحديات سَكِينَة', 'تحديات اختيارية للاستمرار',
               Icons.emoji_events_rounded, const ChallengesPage()),
           _MoreItem('المسبحة الإلكترونية', 'عداد وإحصائيات التسبيح',
               Icons.touch_app_rounded, const TasbeehPage()),
@@ -100,8 +100,8 @@ class _MorePageState extends State<MorePage> {
               Icons.dark_mode_rounded, const RamadanPage()),
         ]),
         _MoreGroup('الحساب والتطبيق', [
-          if (CloudService.signedIn) _MoreItem('رسائل سكينة', 'رسائل المالك والتنبيهات المرسلة لك', Icons.email_rounded, const MessagesPage()),
-          _MoreItem('حساب سكينة', 'تسجيل الدخول والمزامنة السحابية',
+          if (CloudService.signedIn) _MoreItem('رسائل سَكِينَة', 'رسائل المالك والتنبيهات المرسلة لك', Icons.email_rounded, const MessagesPage()),
+          _MoreItem('حساب سَكِينَة', 'تسجيل الدخول والمزامنة السحابية',
               Icons.account_circle_rounded, const AccountPage()),
           if (_isOwner)
             _MoreItem('لوحة المالك', 'إحصائيات المستخدمين وإدارة محتوى اللعبة',
@@ -128,7 +128,7 @@ class _MorePageState extends State<MorePage> {
         .toList();
 
     return ListView(padding: const EdgeInsets.fromLTRB(16, 12, 16, 28), children: [
-      const Text('اكتشف سكينة',
+      const Text('اكتشف سَكِينَة',
           style: TextStyle(fontSize: 24, fontWeight: FontWeight.w900)),
       const SizedBox(height: 4),
       Text('كل أدواتك ومحتواك في مكان واحد',

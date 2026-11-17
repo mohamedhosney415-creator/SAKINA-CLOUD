@@ -101,7 +101,7 @@ class SettingsPage extends StatelessWidget {
         title: const Text('الخصوصية'),
         content: const SingleChildScrollView(
           child: Text(
-              'يمكنك استخدام سكينة محليًا، وعند تسجيل الدخول يُستخدم حسابك لمزامنة بيانات التطبيق بين أجهزتك.\n\n'
+              'يمكنك استخدام سَكِينَة محليًا، وعند تسجيل الدخول يُستخدم حسابك لمزامنة بيانات التطبيق بين أجهزتك.\n\n'
               '• تُحفظ الإعدادات وسجل الاستخدام محليًا، وتُزامن بيانات التطبيق المرتبطة بحسابك عند تسجيل الدخول.\n'
               '• لا نبيع بياناتك ولا نستخدم إعلانات أو أدوات تتبّع.\n'
               '• لا يُطلب إذن الموقع (GPS)؛ تختار مدينتك يدويًا.\n'
@@ -178,7 +178,7 @@ class SettingsPage extends StatelessWidget {
             const SectionTitle('الصلاة والتنبيهات'),
             ListTile(
               leading: const Icon(Icons.verified_user_outlined),
-              title: const Text('جاهزية سكينة'),
+              title: const Text('جاهزية سَكِينَة'),
               subtitle: const Text('مراجعة الإشعارات والمنبهات وصوت الأذان'),
               onTap: () => go(context, const ReadinessPage()),
             ),
@@ -213,7 +213,7 @@ class SettingsPage extends StatelessWidget {
             const SectionTitle('الإشعارات اليومية'),
             SwitchListTile(
               secondary: const Icon(Icons.wb_sunny_outlined),
-              title: const Text('رسالة سكينة اليومية'),
+              title: const Text('رسالة سَكِينَة اليومية'),
               subtitle: const Text('رسالة إيمانية متغيرة كل يوم'),
               value: s.dailyMessageOn,
               onChanged: (v) => sw('dailyMessageOn', v),
@@ -256,7 +256,7 @@ class SettingsPage extends StatelessWidget {
             ),
             SwitchListTile(
               secondary: const Icon(Icons.sports_esports_outlined),
-              title: const Text('تذكير تحدي سكينة'),
+              title: const Text('تذكير تحدي سَكِينَة'),
               subtitle: const Text('تذكير واحد يوميًا بتحدي اللعبة'),
               value: s.gameReminderOn,
               onChanged: (v) => sw('gameReminderOn', v),

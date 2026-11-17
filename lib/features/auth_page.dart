@@ -113,7 +113,7 @@ class _AuthPageState extends State<AuthPage> {
                               color: gold, size: 34),
                         ),
                         const SizedBox(height: 12),
-                        const Text('سكينة',
+                        const Text('سَكِينَة',
                             style: TextStyle(
                                 color: Colors.white,
                                 fontSize: 26,
@@ -129,7 +129,7 @@ class _AuthPageState extends State<AuthPage> {
               ),
             ),
             const SizedBox(height: 24),
-            Text(register ? 'إنشاء حساب جديد' : 'مرحبًا بك في سكينة',
+            Text(register ? 'إنشاء حساب جديد' : 'مرحبًا بك في سَكِينَة',
                 textAlign: TextAlign.center,
                 style: const TextStyle(fontSize: 25, fontWeight: FontWeight.w900)),
             const SizedBox(height: 8),

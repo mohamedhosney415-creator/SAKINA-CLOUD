@@ -23,7 +23,7 @@ jobs:
       - name: Generate iOS project
         run: flutter create --org com.hosny --project-name sakina --platforms=ios .
 
-      - name: Get packages
+      - name: Set iOS display name\n        run: /usr/libexec/PlistBuddy -c 'Set :CFBundleDisplayName سَكِينَة' ios/Runner/Info.plist\n\n      - name: Get packages
         run: flutter pub get
 
       - name: Run regression tests

@@ -3,7 +3,7 @@
   "latestBuild": 19,
   "apkUrl": "https://github.com/mohamedhosney415-creator/SAKINA-CLOUD/releases/latest/download/app-release.apk",
   "minimumVersion": "",
-  "notes": "تحديث سكينة 4.9.2: تحسين لعبة القرآن وإدارة تحديثات التطبيق.",
+  "notes": "تنبيه قبل التثبيت: افتح المزيد > حساب سَكِينَة > مزامنة بياناتي إلى السحابة. بعد نجاح المزامنة احذف النسخة القديمة إذا رفض أندرويد التحديث، ثم ثبت الجديدة وسجل الدخول لاسترجاع بياناتك.",
   "showUpdate": false,
   "autoCheck": true,
   "mandatory": false

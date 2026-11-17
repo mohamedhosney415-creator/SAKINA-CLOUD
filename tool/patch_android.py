@@ -50,7 +50,7 @@ if MARK not in s:
     perm_xml = '    <!-- %s -->\n' % MARK + ''.join(
         '    <uses-permission android:name="android.permission.%s"/>\n' % p for p in perms)
     s = s.replace('<application', perm_xml + '    <application', 1)
-    s = re.sub(r'android:label="[^"]*"', 'android:label="سكينة"', s, count=1)
+    s = re.sub(r'android:label="[^"]*"', 'android:label="سَكِينَة"', s, count=1)
 
     components = '''
         <service android:name="com.ryanheise.audioservice.AudioService"
@@ -80,7 +80,7 @@ if MARK not in s:
         </receiver>
 
         <receiver android:name=".SakinaWidgetProvider"
-            android:label="سكينة - المواقيت"
+            android:label="سَكِينَة - المواقيت"
             android:exported="true">
             <intent-filter>
                 <action android:name="android.appwidget.action.APPWIDGET_UPDATE"/>

@@ -58,7 +58,7 @@ class SakinaWidgetProvider : HomeWidgetProvider() {
                     views.setTextViewText(timeIds[k], prayer?.let { fmt.format(Date(it.second)) } ?: "")
                 }
             } else {
-                views.setTextViewText(R.id.w_next_name, "افتح سكينة لتحديث المواقيت")
+                views.setTextViewText(R.id.w_next_name, "افتح سَكِينَة لتحديث المواقيت")
                 views.setTextViewText(R.id.w_chrono, "")
                 for (k in 0 until 5) {
                     views.setTextViewText(nameIds[k], "")

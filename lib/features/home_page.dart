@@ -125,7 +125,7 @@ class _HomePageState extends State<HomePage> {
                     child: Column(
                         crossAxisAlignment: CrossAxisAlignment.start,
                         children: [
-                      Text('اختبار سكينة الإسلامي',
+                      Text('اختبار سَكِينَة الإسلامي',
                           style: TextStyle(
                               fontWeight: FontWeight.w900, fontSize: 15.5)),
                       SizedBox(height: 3),

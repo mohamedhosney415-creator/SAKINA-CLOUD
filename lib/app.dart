@@ -79,7 +79,7 @@ class _SakinaAppState extends State<SakinaApp> with WidgetsBindingObserver {
         final s = Settings.i;
         return MaterialApp(
           navigatorKey: sakinaNavigatorKey,
-          title: 'سكينة',
+          title: 'سَكِينَة',
           debugShowCheckedModeBanner: false,
           locale: Locale(s.language, s.language == 'ar' ? 'EG' : 'US'),
           supportedLocales: const [
