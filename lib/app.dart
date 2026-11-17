@@ -1,3 +1,4 @@
+import 'dart:async';
 import 'package:flutter/material.dart';
 import 'package:flutter_localizations/flutter_localizations.dart';
 import 'package:just_audio_background/just_audio_background.dart';
@@ -28,14 +29,24 @@ class SakinaApp extends StatefulWidget {
 }
 
 class _SakinaAppState extends State<SakinaApp> with WidgetsBindingObserver {
+  StreamSubscription<AuthState>? _authSubscription;
   @override
   void initState() {
     super.initState();
     WidgetsBinding.instance.addObserver(this);
+    if (CloudService.enabled) {
+      _authSubscription =
+          CloudService.client.auth.onAuthStateChange.listen((event) {
+        if (event.session != null) {
+          Diag.guard('app-version-register', CloudService.recordAppInstall);
+        }
+      });
+    }
     WidgetsBinding.instance.addPostFrameCallback((_) => _startup());
   }
 
   Future<void> _startup() async {
+    await Diag.guard('app-version-register', CloudService.recordAppInstall);
     await Diag.guard('update-check', () => UpdateService.showIfNeeded(sakinaNavigatorKey.currentContext ?? context));
     await Diag.guard('automatic-backup', BackupService.ensureDailyAutoBackup);
     await Diag.guard(
@@ -60,6 +71,7 @@ class _SakinaAppState extends State<SakinaApp> with WidgetsBindingObserver {
   @override
   void didChangeAppLifecycleState(AppLifecycleState state) {
     if (state == AppLifecycleState.resumed) {
+      Diag.guard('app-version-register', CloudService.recordAppInstall);
       Diag.guard(
           'resume-schedule', () => NotificationService.ensureScheduled());
     }
@@ -68,6 +80,7 @@ class _SakinaAppState extends State<SakinaApp> with WidgetsBindingObserver {
   @override
   void dispose() {
     WidgetsBinding.instance.removeObserver(this);
+    _authSubscription?.cancel();
     super.dispose();
   }
 
