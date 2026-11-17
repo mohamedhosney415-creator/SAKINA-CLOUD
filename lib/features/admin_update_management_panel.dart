@@ -249,7 +249,7 @@ class _AdminUpdateManagementPanelState extends State<AdminUpdateManagementPanel>
           SizedBox(
             width: double.infinity,
             child: FilledButton.icon(
-              onPressed: busy ? null : () => _save(showUpdate: true),
+              onPressed: busy ? null : () => _save(showUpdate: true, autoCheck: true),
               icon: const Icon(Icons.campaign_rounded),
               label: const Text('إظهار التحديث للمستخدمين'),
             ),
