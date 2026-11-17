@@ -1,12 +1,13 @@
 {
   "latestVersion": "4.9.2",
   "latestBuild": 19,
-  "apkUrl": "https://github.com/mohamedhosney415-creator/SAKINA-CLOUD/releases/download/v4.9.2-19-build-413/app-release.apk",
+  "latestBuildNumber": 19,
+  "apkUrl": "https://github.com/mohamedhosney415-creator/SAKINA-CLOUD/releases/download/v4.9.2-19-build-415/app-release.apk",
   "minimumVersion": "",
-  "notes": "تحديث سَكِينَة 4.9.2 (19). احفظ بياناتك وسجّل الدخول بنفس الحساب بعد التثبيت لاستعادتها.",
+  "minimumBuildNumber": 0,
+  "notes": "احفظ بياناتك وسجّل الدخول بنفس الحساب بعد التثبيت لاستعادتها. إذا طلب Android إزالة النسخة القديمة، تأكد من اكتمال تنزيل النسخة الجديدة أولًا.",
   "showUpdate": true,
   "autoCheck": true,
   "mandatory": false,
-  "latestBuildNumber": 19,
-  "minimumBuildNumber": 0
+  "publishedAt": "2026-11-17T22:12:03Z"
 }
