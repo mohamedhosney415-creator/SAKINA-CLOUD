@@ -5,7 +5,7 @@
   "apkUrl": "https://github.com/mohamedhosney415-creator/SAKINA-CLOUD/releases/download/v4.9.2-19-build-415/app-release.apk",
   "minimumVersion": "",
   "minimumBuildNumber": 0,
-  "notes": "احفظ بياناتك وسجّل الدخول بنفس الحساب بعد التثبيت لاستعادتها. إذا طلب Android إزالة النسخة القديمة، تأكد من اكتمال تنزيل النسخة الجديدة أولًا.",
+  "notes": "تحديث سَكِينَة 4.9.2 (19). هذا رابط نسخة Release الرسمية، احفظ بياناتك وسجّل الدخول بنفس الحساب بعد التثبيت لاستعادتها.",
   "showUpdate": true,
   "autoCheck": true,
   "mandatory": false,
