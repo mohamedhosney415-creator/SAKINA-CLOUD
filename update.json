@@ -1,8 +1,9 @@
 {
-  "latestVersion": "4.9.0",
-  "latestBuildNumber": 17,
-  "apkUrl": "https://github.com/mohamedhosney415-creator/SAKINA-CLOUD/releases/download/v4.9.0-17-build-240/app-release.apk",
+  "latestVersion": "4.9.1",
+  "latestBuildNumber": 18,
+  "apkUrl": "https://github.com/mohamedhosney415-creator/SAKINA-CLOUD/releases/download/v4.9.1-18-build-305/app-release.apk",
   "minimumVersion": null,
   "minimumBuildNumber": 0,
-  "notes": "آخر إصدار منشور من سكينة."
+  "notes": "يتوفر إصدار جديد من سكينة. افتح التطبيق واتبع رسالة التحديث.",
+  "publishedAt": "2026-11-17T00:36:50Z"
 }
