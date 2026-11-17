@@ -173,6 +173,89 @@ elif os.path.exists(groovy):
 else:
     fail('لم أجد build.gradle(.kts) داخل android/app')
 
+
+# ---------------------------------------------------------------- 5b) Fixed release signing (same keystore for every future APK)
+# The workflow creates android/key.properties from protected GitHub Actions secrets.
+def configure_release_signing(path, is_kts):
+    g = read(path)
+    if 'SAKINA_FIXED_SIGNING' in g:
+        print('fixed release signing already configured')
+        return
+
+    # Load the signing properties after the Gradle plugins block.
+    load_block = '''
+// SAKINA_FIXED_SIGNING: release APKs use the protected SAKINA upload key
+'''
+    if is_kts:
+        load_block += '''val sakinaKeyPropertiesFile = rootProject.file("key.properties")
+if (!sakinaKeyPropertiesFile.exists()) {
+    throw GradleException("Missing android/key.properties. Check the four SAKINA GitHub Actions secrets.")
+}
+val sakinaKeyProperties = java.util.Properties().apply {
+    sakinaKeyPropertiesFile.inputStream().use { load(it) }
+}
+'''
+    else:
+        load_block += '''def sakinaKeyPropertiesFile = rootProject.file("key.properties")
+if (!sakinaKeyPropertiesFile.exists()) {
+    throw new GradleException("Missing android/key.properties. Check the four SAKINA GitHub Actions secrets.")
+}
+def sakinaKeyProperties = new java.util.Properties()
+sakinaKeyPropertiesFile.withInputStream { sakinaKeyProperties.load(it) }
+'''
+
+    if 'plugins' in g:
+        m = re.search(r'(?s)plugins\s*\{.*?\}', g)
+        if not m:
+            fail('تعذر تحديد plugins block لإعداد توقيع APK')
+        g = g[:m.end()] + '\n\n' + load_block + g[m.end():]
+    else:
+        g = load_block + '\n' + g
+
+    # Add signingConfigs inside android {}, immediately before buildTypes.
+    m = re.search(r'(?m)^(\s*)buildTypes\s*\{', g)
+    if not m:
+        fail('تعذر العثور على buildTypes داخل ' + os.path.basename(path))
+    indent = m.group(1)
+    if is_kts:
+        signing = indent + '''signingConfigs {
+''' + indent + '''    create("release") {
+''' + indent + '''        keyAlias = sakinaKeyProperties["keyAlias"] as String
+''' + indent + '''        keyPassword = sakinaKeyProperties["keyPassword"] as String
+''' + indent + '''        storeFile = file(sakinaKeyProperties["storeFile"] as String)
+''' + indent + '''        storePassword = sakinaKeyProperties["storePassword"] as String
+''' + indent + '''    }
+''' + indent + '''}
+
+'''
+        release_line = 'signingConfig = signingConfigs.getByName("release")'
+    else:
+        signing = indent + '''signingConfigs {
+''' + indent + '''    release {
+''' + indent + '''        keyAlias sakinaKeyProperties['keyAlias']
+''' + indent + '''        keyPassword sakinaKeyProperties['keyPassword']
+''' + indent + '''        storeFile file(sakinaKeyProperties['storeFile'])
+''' + indent + '''        storePassword sakinaKeyProperties['storePassword']
+''' + indent + '''    }
+''' + indent + '''}
+
+'''
+        release_line = 'signingConfig signingConfigs.release'
+    g = g[:m.start()] + signing + g[m.start():]
+
+    # Explicitly bind the release build type to the fixed key.
+    m = re.search(r'(?m)^(\s*)release\s*\{', g, re.search(r'(?m)^\s*buildTypes\s*\{', g).start())
+    if not m:
+        fail('تعذر العثور على release داخل buildTypes')
+    g = g[:m.end()] + '\n' + m.group(1) + '    ' + release_line + g[m.end():]
+    write(path, g)
+    print('fixed release signing configured:', os.path.basename(path))
+
+if os.path.exists(kts):
+    configure_release_signing(kts, True)
+else:
+    configure_release_signing(groovy, False)
+
 # ---------------------------------------------------------------- 6) تعطيل R8/التصغير في الإصدار
 # مكتبات الإشعارات والصوت تستعمل reflection/Gson وقد تتعطل أو تغلق التطبيق مع R8.
 def disable_shrink(path, groovy_syntax):
