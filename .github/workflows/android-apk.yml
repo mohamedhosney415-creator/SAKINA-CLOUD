@@ -72,6 +72,22 @@ jobs:
             exit 1
           fi
 
+      - name: Build universal Release APK for website downloads
+        env:
+          SUPABASE_URL: ${{ secrets.SUPABASE_URL }}
+          SUPABASE_PUBLISHABLE_KEY: ${{ secrets.SUPABASE_PUBLISHABLE_KEY }}
+        run: |
+          if [ -n "$SUPABASE_URL" ] && [ -n "$SUPABASE_PUBLISHABLE_KEY" ]; then
+            flutter build apk --release \\
+              --dart-define=SUPABASE_URL="$SUPABASE_URL" \\
+              --dart-define=SUPABASE_PUBLISHABLE_KEY="$SUPABASE_PUBLISHABLE_KEY"
+          elif [ -z "$SUPABASE_URL" ] && [ -z "$SUPABASE_PUBLISHABLE_KEY" ]; then
+            flutter build apk --release
+          else
+            echo "Set both Supabase secrets, or leave both unset."
+            exit 1
+          fi
+
       - name: Enforce APK size limit (100 MB per download)
         run: |
           set -euo pipefail
@@ -79,7 +95,7 @@ jobs:
           from pathlib import Path
           import sys
           output = Path("build/app/outputs/flutter-apk")
-          apks = sorted(output.glob("app-*-release.apk"))
+          apks = sorted(output.glob("app-*-release.apk")) + [output / "app-release.apk"]
           if not apks:
               sys.exit("ERROR: No split Release APKs were produced.")
           limit = 100_000_000
@@ -109,7 +125,9 @@ jobs:
         uses: actions/upload-artifact@v4
         with:
           name: SAKINA-release-apks
-          path: build/app/outputs/flutter-apk/app-*-release.apk
+          path: |
+            build/app/outputs/flutter-apk/app-release.apk
+            build/app/outputs/flutter-apk/app-*-release.apk
           if-no-files-found: error
 
       - name: Publish stable Release APK downloads
@@ -122,6 +140,7 @@ jobs:
           overwrite_files: true
           files: |
             build/app/outputs/flutter-apk/app-armeabi-v7a-release.apk
+            build/app/outputs/flutter-apk/app-release.apk
             build/app/outputs/flutter-apk/app-arm64-v8a-release.apk
             build/app/outputs/flutter-apk/app-x86_64-release.apk
         env:
