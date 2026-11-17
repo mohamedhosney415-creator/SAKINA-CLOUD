@@ -5,6 +5,10 @@ on:
     branches: [main, master, sakina-4-ui-streak, feature/sakina-5-upgrade]
   workflow_dispatch:
 
+concurrency:
+  group: sakina-android-${{ github.ref }}
+  cancel-in-progress: true
+
 jobs:
   build:
     runs-on: ubuntu-latest
