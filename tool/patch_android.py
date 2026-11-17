@@ -203,7 +203,7 @@ def configure_release_signing(path, kotlin_dsl):
     if kotlin_dsl:
         # Kotlin DSL's generated "java" extension shadows the java package name;
         # use explicit imports so Properties/FileInputStream resolve reliably.
-        imports = 'import java.util.Properties\\nimport java.io.FileInputStream\\n'
+        imports = 'import java.util.Properties\nimport java.io.FileInputStream\n'
         if 'import java.util.Properties' not in g:
             g = imports + g
     props = '''
