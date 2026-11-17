@@ -2,14 +2,13 @@
 """Configure a persistent Android release signing key from GitHub Actions secrets."""
 import base64
 import os
-import re
 import subprocess
 from pathlib import Path
 
 root = Path.cwd()
 android = root / "android"
 app = android / "app"
-encoded = os.environ.get("SAKINA_KEYSTORE_BASE64", "").strip()
+encoded = "".join(os.environ.get("SAKINA_KEYSTORE_BASE64", "").split())
 store_password = os.environ.get("SAKINA_STORE_PASSWORD", "")
 key_alias = os.environ.get("SAKINA_KEY_ALIAS", "")
 key_password = os.environ.get("SAKINA_KEY_PASSWORD", "")
@@ -64,13 +63,17 @@ if "SAKINA_RELEASE_SIGNING" in source:
     print("Android release signing already configured.")
     raise SystemExit(0)
 
-imports = "import java.util.Properties\nimport java.io.FileInputStream\n"
-source = imports + source
+source = "import java.util.Properties\nimport java.io.FileInputStream\n" + source
 
-plugins = re.search(r"(?m)^plugins\\s*\\{[\\s\\S]*?^\\}", source)
-if not plugins:
+plugins_start = source.find("plugins {")
+if plugins_start < 0:
     raise SystemExit("ERROR: Could not locate the Gradle plugins block.")
-loader = '''
+plugins_open = source.find("{", plugins_start)
+plugins_end = source.find("}", plugins_open)
+if plugins_open < 0 or plugins_end < 0:
+    raise SystemExit("ERROR: Could not parse the Gradle plugins block.")
+
+loader = """
 // SAKINA_RELEASE_SIGNING
 val sakinaKeystoreProperties = Properties()
 val sakinaKeystoreFile = rootProject.file("key.properties")
@@ -78,13 +81,15 @@ if (!sakinaKeystoreFile.exists()) {
     throw GradleException("SAKINA release key.properties is missing")
 }
 sakinaKeystoreProperties.load(FileInputStream(sakinaKeystoreFile))
-'''
-source = source[:plugins.end()] + "\n" + loader + source[plugins.end():]
+"""
+source = source[:plugins_end + 1] + "\n" + loader + source[plugins_end + 1:]
 
-android_match = re.search(r"(?m)^android\\s*\\{", source)
-if not android_match:
+android_start = source.find("android {")
+if android_start < 0:
     raise SystemExit("ERROR: Could not locate the Android Gradle block.")
-signing = '''
+android_open = source.find("{", android_start)
+
+signing = """
     signingConfigs {
         create("release") {
             keyAlias = sakinaKeystoreProperties["keyAlias"] as String
@@ -93,20 +98,22 @@ signing = '''
             storePassword = sakinaKeystoreProperties["storePassword"] as String
         }
     }
-'''
-source = source[:android_match.end()] + signing + source[android_match.end():]
+"""
+source = source[:android_open + 1] + signing + source[android_open + 1:]
 
-release_block = re.search(r"buildTypes\\s*\\{[\\s\\S]*?\\brelease\\s*\\{", source)
-if not release_block:
+build_types = source.find("buildTypes {")
+release_start = source.find("release {", build_types)
+if build_types < 0 or release_start < 0:
     raise SystemExit("ERROR: Could not locate release build type.")
+release_end = release_start + len("release {")
 debug_line = 'signingConfig = signingConfigs.getByName("debug")'
-if debug_line in source[release_block.end():]:
-    pos = source.index(debug_line, release_block.end())
+pos = source.find(debug_line, release_end)
+if pos >= 0:
     source = source[:pos] + 'signingConfig = signingConfigs.getByName("release")' + source[pos + len(debug_line):]
 else:
-    source = (source[:release_block.end()] +
+    source = (source[:release_end] +
               '\n            signingConfig = signingConfigs.getByName("release")' +
-              source[release_block.end():])
+              source[release_end:])
 
 kts.write_text(source, encoding="utf-8")
 print("Stable Android release signing configured and validated; secret values were not printed.")
