@@ -109,7 +109,7 @@ jobs:
           prerelease: true
           make_latest: false
 
-      - name: Update public update manifest on main
+      - name: Update public update manifest on feature/sakina-5-upgrade
         if: steps.current.outputs.publish == 'true'
         env:
           LATEST_VERSION: ${{ steps.meta.outputs.app_version }}
@@ -119,8 +119,8 @@ jobs:
           RELEASE_NOTES: "احفظ بياناتك وسجّل الدخول بنفس الحساب بعد التثبيت لاستعادتها. إذا طلب Android إزالة النسخة القديمة، تأكد من اكتمال تنزيل النسخة الجديدة أولًا."
         run: |
           set -euo pipefail
-          git fetch origin +refs/heads/main:refs/remotes/origin/main
-          git checkout -B update-manifest origin/main
+          git fetch origin +refs/heads/feature/sakina-5-upgrade:refs/remotes/origin/feature/sakina-5-upgrade
+          git checkout -B update-manifest origin/feature/sakina-5-upgrade
           APK_URL="https://github.com/${REPOSITORY}/releases/download/${RELEASE_TAG}/app-release.apk"
           jq -n \
             --arg version "$LATEST_VERSION" \
@@ -137,4 +137,4 @@ jobs:
             exit 0
           fi
           git commit -m "Publish SAKINA update manifest for ${RELEASE_TAG}"
-          git push origin HEAD:main
+          git push origin HEAD:feature/sakina-5-upgrade
