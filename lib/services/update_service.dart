@@ -134,7 +134,7 @@ class UpdateService {
     final minimum = info.minimumVersion?.trim() ?? '';
     final belowMinimum =
         minimum.isNotEmpty && _compare(package.version, minimum) < 0;
-    final mandatory = info.mandatory && (belowMinimum || outdated);
+    final mandatory = info.mandatory && (minimum.isEmpty || belowMinimum);
     if (!mandatory && (!info.autoCheck || !info.showUpdate)) return;
 
     final uri = Uri.tryParse(info.apkUrl);
