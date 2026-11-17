@@ -1,4 +1,4 @@
-name: Build SAKINA APK
+name: Build SAKINA Release APKs
 
 on:
   push:
@@ -8,6 +8,10 @@ on:
 permissions:
   contents: write
 
+concurrency:
+  group: sakina-android-${{ github.ref }}
+  cancel-in-progress: true
+
 jobs:
   build:
     runs-on: ubuntu-latest
@@ -15,7 +19,7 @@ jobs:
     steps:
       - uses: actions/checkout@v4
 
-      - name: Verify project files (fails clearly if something is missing)
+      - name: Verify project files
         run: python3 tool/verify_project.py
 
       - uses: actions/setup-java@v4
@@ -37,7 +41,7 @@ jobs:
       - name: Remove generated starter test only
         run: rm -f test/widget_test.dart
 
-      - name: Patch Android (manifest, widget, adhan audio, gradle)
+      - name: Patch Android
         run: python3 tool/patch_android.py
 
       - name: Get packages
@@ -49,43 +53,67 @@ jobs:
       - name: Analyze Dart code
         run: flutter analyze --no-fatal-infos --no-fatal-warnings
 
-      - name: Build debug APK (Cloud optional)
-        env:
-          SUPABASE_URL: ${{ secrets.SUPABASE_URL }}
-          SUPABASE_PUBLISHABLE_KEY: ${{ secrets.SUPABASE_PUBLISHABLE_KEY }}
-        run: |
-          if [ -n "$SUPABASE_URL" ] && [ -n "$SUPABASE_PUBLISHABLE_KEY" ]; then
-            flutter build apk --debug \
-              --dart-define=SUPABASE_URL="$SUPABASE_URL" \
-              --dart-define=SUPABASE_PUBLISHABLE_KEY="$SUPABASE_PUBLISHABLE_KEY"
-          elif [ -z "$SUPABASE_URL" ] && [ -z "$SUPABASE_PUBLISHABLE_KEY" ]; then
-            echo "Supabase secrets are not set; building local-only APK."
-            flutter build apk --debug
-          else
-            echo "Set both SUPABASE_URL and SUPABASE_PUBLISHABLE_KEY, or leave both unset."
-            exit 1
-          fi
+      # Same signing approach as the v4 workflow: no custom keystore secrets.
+      # Flutter's generated Android project uses its default debug signing config
+      # for this locally distributed release build.
+      - name: Build split Release APKs (no GitHub secrets)
+        run: flutter build apk --release --split-per-abi
 
-      - name: Upload APK
+      - name: Enforce APK size limit (100 MB per download)
+        run: |
+          set -euo pipefail
+          python3 - <<'PY'
+          from pathlib import Path
+          import sys
+          output = Path("build/app/outputs/flutter-apk")
+          apks = sorted(output.glob("app-*-release.apk"))
+          if not apks:
+              sys.exit("ERROR: No split Release APKs were produced.")
+          limit = 100_000_000
+          failed = False
+          for apk in apks:
+              size = apk.stat().st_size
+              print(f"{apk.name}: {size:,} bytes ({size / 1_000_000:.2f} MB)")
+              if size >= limit:
+                  print(f"ERROR: {apk.name} is not below 100 MB.")
+                  failed = True
+          if failed:
+              sys.exit(1)
+          print("All downloadable APKs are below 100 MB.")
+          PY
+
+      - name: Verify APK signatures
+        run: |
+          set -euo pipefail
+          APKSIGNER="$(find "$ANDROID_HOME/build-tools" -type f -name apksigner | sort -V | tail -n 1)"
+          test -x "$APKSIGNER"
+          for apk in build/app/outputs/flutter-apk/app-*-release.apk; do
+            echo "Checking $apk"
+            "$APKSIGNER" verify --verbose --print-certs "$apk"
+          done
+
+      - name: Upload Release APKs
         uses: actions/upload-artifact@v4
         with:
-          name: SAKINA-debug-apk
-          path: build/app/outputs/flutter-apk/app-debug.apk
+          name: SAKINA-release-apks
+          path: build/app/outputs/flutter-apk/app-*-release.apk
+          if-no-files-found: error
 
-      - name: Publish stable Debug APK download
+      - name: Publish stable Release APK downloads
         uses: softprops/action-gh-release@v2
         with:
-          tag_name: debug-latest
-          name: SAKINA Debug APK
+          tag_name: release-latest
+          name: SAKINA Release APKs
           prerelease: true
           make_latest: false
           overwrite_files: true
-          files: build/app/outputs/flutter-apk/app-debug.apk
+          files: |
+            build/app/outputs/flutter-apk/app-armeabi-v7a-release.apk
+            build/app/outputs/flutter-apk/app-arm64-v8a-release.apk
+            build/app/outputs/flutter-apk/app-x86_64-release.apk
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
 
-  # يشغّل التطبيق على محاكي أندرويد ويصوّر الشاشة ويجمع سجل الأعطال.
-  # لو التطبيق يغلق عندك: افتح هذه الخطوة ← حمّل Artifact اسمه smoke-test-output.
   smoke-test:
     needs: build
     runs-on: ubuntu-latest
@@ -94,7 +122,7 @@ jobs:
     steps:
       - uses: actions/download-artifact@v4
         with:
-          name: SAKINA-debug-apk
+          name: SAKINA-release-apks
           path: apk
 
       - name: Enable KVM
@@ -113,7 +141,7 @@ jobs:
           disable-animations: true
           script: |
             mkdir -p out
-            adb install -r apk/app-debug.apk
+            adb install -r apk/app-x86_64-release.apk
             adb logcat -c
             adb shell monkey -p com.hosny.sakina -c android.intent.category.LAUNCHER 1
             sleep 30
