@@ -7,7 +7,12 @@ import '../data/religious_game_bank.dart';
 import '../models/quran_game_question.dart';
 
 class QuranGameConfig {
-  static int questionsPerLevelFor(int level) => 5 + ((level - 1) ~/ 5);
+  // يبدأ كل مستوى بخمسة أسئلة، ويُضاف سؤال بعد كل خمسة مستويات.
+  // 1-5: 5، 6-10: 6، 11-15: 7 ... حتى المستوى 100.
+  static int questionsPerLevelFor(int level) {
+    final safeLevel = level.clamp(1, 100);
+    return 5 + ((safeLevel - 1) ~/ 5);
+  }
   static const basePoints = 10;
   static const levelBonus = 25;
   static const perfectBonus = 50;
