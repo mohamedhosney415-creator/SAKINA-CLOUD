@@ -39,6 +39,25 @@ class CloudService {
 
   static Future<void> signOut() => client.auth.signOut();
 
+  /// Creates immutable local/cloud snapshots and verifies the cloud copy in one DB transaction.
+  /// Both sides are preserved before the current local state becomes the restore point.
+  static Future<Map<String, dynamic>> prepareUpdateBackup() async {
+    final u = user;
+    if (u == null) throw StateError('AUTH_REQUIRED');
+    final response = await client.rpc(
+      'prepare_sakina_update_backup',
+      params: {'p_local_data': Store.exportAll()},
+    );
+    if (response is! Map) {
+      throw StateError('INVALID_BACKUP_RESPONSE');
+    }
+    final result = Map<String, dynamic>.from(response);
+    if (result['ok'] != true || result['verified'] != true) {
+      throw StateError('BACKUP_NOT_VERIFIED');
+    }
+    return result;
+  }
+
   static Future<bool> pushLocalData({bool allowOverwrite = false}) async {
     final u = user;
     if (u == null) return false;
