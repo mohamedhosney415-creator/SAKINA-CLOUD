@@ -276,18 +276,20 @@ class UpdateService {
                             busy = false;
                             error = 'فشلت المزامنة أو عملية التحقق. لم يتم بدء التحديث. حاول مرة أخرى. (${e.toString()})';
                           });
+                          return;
                         }
-                        return;
                       }
                       final opened = await launchUrl(
                         uri,
                         mode: LaunchMode.externalApplication,
                       );
                       if (!opened && dialogContext.mounted) {
-                        setDialogState(() => error = 'تم حفظ بياناتك، لكن تعذر فتح رابط التحديث.');
+                        setDialogState(() => error = backupDone
+                            ? 'تم حفظ بياناتك، لكن تعذر فتح رابط التحديث.'
+                            : 'تعذر فتح رابط التحديث.');
                       }
                     },
-                    child: Text(backupDone ? 'متابعة إلى تنزيل التحديث' : 'مزامنة آمنة وحفظ بياناتي'),
+                    child: Text(backupDone ? 'فتح رابط التحديث' : (CloudService.enabled ? 'تحديث الآن مع مزامنة تلقائية' : 'متابعة إلى تنزيل التحديث')),
                   ),
               ],
             ),
