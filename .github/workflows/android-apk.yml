@@ -78,8 +78,8 @@ jobs:
           SUPABASE_PUBLISHABLE_KEY: ${{ secrets.SUPABASE_PUBLISHABLE_KEY }}
         run: |
           if [ -n "$SUPABASE_URL" ] && [ -n "$SUPABASE_PUBLISHABLE_KEY" ]; then
-            flutter build apk --release \\
-              --dart-define=SUPABASE_URL="$SUPABASE_URL" \\
+            flutter build apk --release \
+              --dart-define=SUPABASE_URL="$SUPABASE_URL" \
               --dart-define=SUPABASE_PUBLISHABLE_KEY="$SUPABASE_PUBLISHABLE_KEY"
           elif [ -z "$SUPABASE_URL" ] && [ -z "$SUPABASE_PUBLISHABLE_KEY" ]; then
             flutter build apk --release
