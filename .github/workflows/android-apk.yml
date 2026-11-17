@@ -53,11 +53,24 @@ jobs:
       - name: Analyze Dart code
         run: flutter analyze --no-fatal-infos --no-fatal-warnings
 
-      # Same signing approach as the v4 workflow: no custom keystore secrets.
-      # Flutter's generated Android project uses its default debug signing config
-      # for this locally distributed release build.
-      - name: Build split Release APKs (no GitHub secrets)
-        run: flutter build apk --release --split-per-abi
+      # Supabase secrets are retained; signing secrets are intentionally not used.
+      # The generated Android debug keystore is used for signing this Release build.
+      - name: Build split Release APKs (Supabase optional, no signing secrets)
+        env:
+          SUPABASE_URL: ${{ secrets.SUPABASE_URL }}
+          SUPABASE_PUBLISHABLE_KEY: ${{ secrets.SUPABASE_PUBLISHABLE_KEY }}
+        run: |
+          if [ -n "$SUPABASE_URL" ] && [ -n "$SUPABASE_PUBLISHABLE_KEY" ]; then
+            flutter build apk --release --split-per-abi \
+              --dart-define=SUPABASE_URL="$SUPABASE_URL" \
+              --dart-define=SUPABASE_PUBLISHABLE_KEY="$SUPABASE_PUBLISHABLE_KEY"
+          elif [ -z "$SUPABASE_URL" ] && [ -z "$SUPABASE_PUBLISHABLE_KEY" ]; then
+            echo "Supabase secrets are not set; building local-only APK."
+            flutter build apk --release --split-per-abi
+          else
+            echo "Set both SUPABASE_URL and SUPABASE_PUBLISHABLE_KEY, or leave both unset."
+            exit 1
+          fi
 
       - name: Enforce APK size limit (100 MB per download)
         run: |
