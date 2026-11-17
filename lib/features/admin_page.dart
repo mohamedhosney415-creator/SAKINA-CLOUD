@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import '../cloud/game_cloud_service.dart';
 import '../cloud/cloud_service.dart';
 import '../data/surahs.dart';
+import '../services/update_service.dart';
 
 class AdminPage extends StatefulWidget {
   const AdminPage({super.key});
@@ -18,6 +19,10 @@ class _AdminPageState extends State<AdminPage> {
   List<Map<String, dynamic>> players = [];
   List<Map<String, dynamic>> questions = [];
   List<Map<String, dynamic>> daily = [];
+  SakinaUpdateInfo? releaseInfo;
+  List<Map<String, dynamic>> outdatedUsers = [];
+  int unreportedUsers = 0;
+  bool scanningVersions = false;
 
   @override
   void initState() {
@@ -52,6 +57,48 @@ class _AdminPageState extends State<AdminPage> {
       if (mounted) setState(() => error = '$e');
     } finally {
       if (mounted) setState(() => loading = false);
+    }
+  }
+
+  Future<void> _scanVersions() async {
+    setState(() => scanningVersions = true);
+    try {
+      final latest = await UpdateService.check();
+      if (latest == null) {
+        throw StateError('تعذر قراءة ملف الإصدار المنشور.');
+      }
+      final refreshedUsers = await CloudService.adminUsers();
+      final outdated = refreshedUsers.where((user) {
+        return UpdateService.isOutdatedInstall(
+          user['app_version']?.toString(),
+          int.tryParse(user['build_number']?.toString() ?? ''),
+          latest,
+        );
+      }).toList();
+      final unreported = refreshedUsers
+          .where((user) => (user['app_version']?.toString() ?? '').isEmpty)
+          .length;
+      if (!mounted) return;
+      setState(() {
+        users = refreshedUsers;
+        releaseInfo = latest;
+        outdatedUsers = outdated;
+        unreportedUsers = unreported;
+        scanningVersions = false;
+      });
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: Text(
+            'تم الفحص: ${outdated.length} نسخة قديمة، و${unreported} مستخدم لم يسجل إصدار جهازه بعد.',
+          ),
+        ),
+      );
+    } catch (e) {
+      if (!mounted) return;
+      setState(() => scanningVersions = false);
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(content: Text('فشل فحص الإصدارات: $e')),
+      );
     }
   }
 
@@ -127,6 +174,43 @@ class _AdminPageState extends State<AdminPage> {
         _metric('وصلوا للمستوى 100', overview['level_100_players'] ?? 0,
             Icons.emoji_events_outlined),
         const SizedBox(height: 12),
+        Card(
+          child: Padding(
+            padding: const EdgeInsets.all(16),
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                const Text('تحديثات التطبيق', style: TextStyle(fontWeight: FontWeight.w900, fontSize: 16)),
+                const SizedBox(height: 8),
+                const Text('افحص إصدارات أجهزة المستخدمين واعرف من يحتاج إلى التحديث.'),
+                const SizedBox(height: 10),
+                SizedBox(
+                  width: double.infinity,
+                  child: FilledButton.icon(
+                    onPressed: scanningVersions ? null : _scanVersions,
+                    icon: scanningVersions
+                        ? const SizedBox(width: 18, height: 18, child: CircularProgressIndicator(strokeWidth: 2))
+                        : const Icon(Icons.system_update_alt_rounded),
+                    label: Text(scanningVersions ? 'جارٍ الفحص...' : 'فحص إصدارات المستخدمين'),
+                  ),
+                ),
+                if (releaseInfo != null) ...[
+                  const SizedBox(height: 10),
+                  Text('أحدث إصدار: ${releaseInfo!.latestVersion}+${releaseInfo!.latestBuildNumber}'),
+                  Text('نسخ قديمة: ${outdatedUsers.length} • لم تسجل إصدارها: ${unreportedUsers}'),
+                  for (final user in outdatedUsers.take(6))
+                    Text(
+                      (user['display_name'] ?? user['email'] ?? 'مستخدم').toString() +
+                          ' — ' + user['app_version'].toString() +
+                          '+' + (user['build_number'] ?? 0).toString(),
+                      maxLines: 1,
+                      overflow: TextOverflow.ellipsis,
+                    ),
+                ],
+              ],
+            ),
+          ),
+        ),
         Card(
             child: Padding(
                 padding: const EdgeInsets.all(16),
