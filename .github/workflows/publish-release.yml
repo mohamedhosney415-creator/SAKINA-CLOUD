@@ -71,7 +71,9 @@ jobs:
             find release-assets -maxdepth 5 -type f -print || true
             exit 1
           fi
-          cp "$APK_SOURCE" release-assets/app-release.apk
+          if [ "$APK_SOURCE" != "release-assets/app-release.apk" ]; then
+            cp "$APK_SOURCE" release-assets/app-release.apk
+          fi
 
           APP_VERSION="${VERSION%%+*}"
           BUILD_NUMBER="${VERSION#*+}"
