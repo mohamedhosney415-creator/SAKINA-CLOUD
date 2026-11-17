@@ -29,4 +29,5 @@ $function$;
 
 revoke all on function public.get_public_app_update() from public;
 grant usage on schema public to anon, authenticated;
-grant execute on function public.get_public_app_update() to anon, authenticated;
+revoke execute on function public.get_public_app_update() from authenticated;
+grant execute on function public.get_public_app_update() to anon;
