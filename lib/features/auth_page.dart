@@ -56,8 +56,14 @@ class _AuthPageState extends State<AuthPage> {
     setState(() { loading = true; error = null; });
     try {
       await CloudService.signInWithGoogle();
-    } catch (_) {
-      if (mounted) setState(() => error = 'تعذر فتح تسجيل Google. تأكد من تفعيل Google في إعدادات Supabase وإضافة رابط التحويل.');
+    } on AuthException catch (e) {
+      if (mounted) {
+        setState(() => error = 'فشل تسجيل Google: ${e.message}');
+      }
+    } catch (e) {
+      if (mounted) {
+        setState(() => error = 'تعذر بدء تسجيل Google: ${e.toString()}');
+      }
     } finally {
       if (mounted) setState(() => loading = false);
     }
