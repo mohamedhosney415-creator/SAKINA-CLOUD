@@ -52,14 +52,26 @@ void main() {
     expect(QuranGameService.totalQuestions, 1);
   });
 
+  test('question count grows by one every five levels', () {
+    expect(QuranGameConfig.questionsPerLevelFor(1), 5);
+    expect(QuranGameConfig.questionsPerLevelFor(5), 5);
+    expect(QuranGameConfig.questionsPerLevelFor(6), 6);
+    expect(QuranGameConfig.questionsPerLevelFor(10), 6);
+    expect(QuranGameConfig.questionsPerLevelFor(11), 7);
+    expect(QuranGameConfig.questionsPerLevelFor(15), 7);
+    expect(QuranGameConfig.questionsPerLevelFor(16), 8);
+    expect(QuranGameConfig.questionsPerLevelFor(100), 24);
+    expect(QuranGameConfig.questionsPerLevelFor(0), 5);
+  });
+
   test(
-    'ten correct unique answers complete a perfect level exactly once',
+    'five correct unique answers complete the first perfect level exactly once',
     () async {
-      final levelQuestions = quranGameBank.where((q) => q.level == 1);
+      final levelQuestions = quranGameBank.where((q) => q.level == 1).take(5);
       for (final q in levelQuestions) {
         await QuranGameService.answer(q, true);
       }
-      expect(QuranGameService.questionsAnsweredInCurrentLevel, 10);
+      expect(QuranGameService.questionsAnsweredInCurrentLevel, 5);
       expect(await QuranGameService.completeLevelIfReady(), isTrue);
       expect(QuranGameService.level, 2);
       expect(QuranGameService.perfectLevels, 1);
@@ -71,7 +83,8 @@ void main() {
   test(
     'an incorrect answer prevents perfect status and resets combo',
     () async {
-      final levelQuestions = quranGameBank.where((q) => q.level == 1).toList();
+      final levelQuestions =
+          quranGameBank.where((q) => q.level == 1).take(5).toList();
       for (var i = 0; i < levelQuestions.length; i++) {
         await QuranGameService.answer(levelQuestions[i], i != 3);
       }
