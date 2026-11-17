@@ -66,6 +66,17 @@ class _QuranGamePageState extends State<QuranGamePage> {
       });
 
   @override
+  void initState() {
+    super.initState();
+    _refreshGameState();
+  }
+
+  Future<void> _refreshGameState() async {
+    await QuranGameService.loadRemoteQuestions();
+    if (mounted) setState(() {});
+  }
+
+  @override
   Widget build(BuildContext context) => Theme(
         data: Theme.of(context).copyWith(
           scaffoldBackgroundColor: background,
@@ -83,6 +94,29 @@ class _QuranGamePageState extends State<QuranGamePage> {
       );
 
   Widget _body() {
+    if (!QuranGameService.gameEnabled) {
+      return Center(
+        child: Padding(
+          padding: const EdgeInsets.all(28),
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              const Icon(Icons.construction_rounded, size: 58, color: goldDeep),
+              const SizedBox(height: 14),
+              const Text('اللعبة متوقفة مؤقتًا', style: TextStyle(fontSize: 22, fontWeight: FontWeight.w900)),
+              const SizedBox(height: 8),
+              Text(QuranGameService.maintenanceMessage, textAlign: TextAlign.center),
+              const SizedBox(height: 16),
+              OutlinedButton.icon(
+                onPressed: _refreshGameState,
+                icon: const Icon(Icons.refresh_rounded),
+                label: const Text('إعادة التحقق'),
+              ),
+            ],
+          ),
+        ),
+      );
+    }
     if (tab == 1) return _pathPage();
     if (tab == 2) return _achievementsPreview();
     if (tab == 3) return _accountPage();
