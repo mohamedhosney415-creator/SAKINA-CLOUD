@@ -143,6 +143,54 @@ class CloudService {
     return row != null;
   }
 
+  static Future<void> recordAppInstall({
+    required String version,
+    required int buildNumber,
+  }) async {
+    final u = user;
+    if (u == null) return;
+    await client.from('app_installs').upsert({
+      'user_id': u.id,
+      'app_version': version,
+      'build_number': buildNumber,
+      'platform': 'android',
+      'last_seen_at': DateTime.now().toUtc().toIso8601String(),
+    });
+  }
+
+  static Future<List<Map<String, dynamic>>> adminAppInstalls() async {
+    if (!await isOwner()) throw StateError('Owner access required');
+    final rows = await client
+        .from('app_installs')
+        .select('user_id,app_version,build_number,platform,last_seen_at')
+        .order('last_seen_at', ascending: false);
+    return List<Map<String, dynamic>>.from(rows);
+  }
+
+  static Future<Map<String, dynamic>?> appUpdateSettings() async {
+    final row = await client
+        .from('app_update_settings')
+        .select()
+        .eq('id', 1)
+        .maybeSingle();
+    return row == null ? null : Map<String, dynamic>.from(row);
+  }
+
+  static Future<void> saveAppUpdateSettings(
+    Map<String, dynamic> settings,
+  ) async {
+    final u = user;
+    if (u == null || !await isOwner()) {
+      throw StateError('Owner access required');
+    }
+    await client.from('app_update_settings').upsert({
+      ...settings,
+      'id': 1,
+      'updated_at': DateTime.now().toUtc().toIso8601String(),
+      'updated_by': u.id,
+    });
+  }
+
   static String prettyJson(Object value) =>
       const JsonEncoder.withIndent('  ').convert(value);
 }
