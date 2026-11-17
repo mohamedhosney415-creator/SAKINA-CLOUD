@@ -1,10 +1,12 @@
 {
   "latestVersion": "4.9.2",
   "latestBuild": 19,
-  "apkUrl": "https://github.com/mohamedhosney415-creator/SAKINA-CLOUD/releases/latest/download/app-release.apk",
+  "apkUrl": "https://github.com/mohamedhosney415-creator/SAKINA-CLOUD/releases/download/v4.9.2-19-build-413/app-release.apk",
   "minimumVersion": "",
-  "notes": "تنبيه قبل التثبيت: افتح المزيد > حساب سَكِينَة > مزامنة بياناتي إلى السحابة. بعد نجاح المزامنة احذف النسخة القديمة إذا رفض أندرويد التحديث، ثم ثبت الجديدة وسجل الدخول لاسترجاع بياناتك.",
-  "showUpdate": false,
+  "notes": "تحديث سَكِينَة 4.9.2 (19). احفظ بياناتك وسجّل الدخول بنفس الحساب بعد التثبيت لاستعادتها.",
+  "showUpdate": true,
   "autoCheck": true,
-  "mandatory": false
+  "mandatory": false,
+  "latestBuildNumber": 19,
+  "minimumBuildNumber": 0
 }
