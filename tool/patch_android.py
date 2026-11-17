@@ -115,7 +115,7 @@ if 'SAKINA_OAUTH_REDIRECT' not in s:
             </intent-filter>
 '''
     s, count = re.subn(
-        r'(<activity\\b(?=[^>]*android:name="[^"]*MainActivity")[^>]*>)(.*?)(</activity>)',
+        r'(<activity\b(?=[^>]*android:name="[^"]*MainActivity")[^>]*>)(.*?)(</activity>)',
         lambda m: m.group(1) + m.group(2) + oauth_filter + m.group(3),
         s, count=1, flags=re.S)
     if count == 0:
