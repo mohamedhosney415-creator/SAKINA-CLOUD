@@ -32,14 +32,26 @@ class _AdminUpdateManagementPanelState extends State<AdminUpdateManagementPanel>
   String? error;
   int get outdatedCount => _oldRows.length;
 
-  List<Map<String, dynamic>> get _oldRows => installs.where((row) {
-        return UpdateService.isOlder(
-          row['app_version']?.toString() ?? '0',
-          int.tryParse(row['build_number']?.toString() ?? '0') ?? 0,
-          settings['latest_version']?.toString() ?? _version.text,
-          int.tryParse(settings['latest_build']?.toString() ?? _build.text) ?? 0,
-        );
-      }).toList();
+  bool _isOld(Map<String, dynamic> row) => UpdateService.isOlder(
+        row['app_version']?.toString() ?? '0',
+        int.tryParse(row['build_number']?.toString() ?? '0') ?? 0,
+        settings['latest_version']?.toString() ?? _version.text,
+        int.tryParse(settings['latest_build']?.toString() ?? _build.text) ?? 0,
+      );
+
+  String _userLabel(Map<String, dynamic> row) {
+    final id = row['user_id']?.toString() ?? '';
+    for (final profile in profiles) {
+      if (profile['id']?.toString() == id) {
+        final email = profile['email']?.toString();
+        if (email != null && email.isNotEmpty) return email;
+      }
+    }
+    return id.length > 8 ? id.substring(0, 8) : id;
+  }
+
+  List<Map<String, dynamic>> get _oldRows =>
+      installs.where(_isOld).toList();
 
   @override
   void initState() {
@@ -274,25 +286,29 @@ class _AdminUpdateManagementPanelState extends State<AdminUpdateManagementPanel>
             value: settings['show_update'] == true,
             onChanged: busy ? null : (value) => _save(showUpdate: value),
           ),
-          if (_oldRows.isNotEmpty) ...[
+          if (installs.isNotEmpty) ...[
             const Divider(height: 24),
-            Text(
-              'حسابات على إصدار قديم (' + _oldRows.length.toString() + ')',
-              style: const TextStyle(fontWeight: FontWeight.w800),
+            const Text(
+              'تفاصيل إصدارات المستخدمين',
+              style: TextStyle(fontWeight: FontWeight.w800),
             ),
-            for (final row in _oldRows.take(15))
+            for (final row in installs.take(50))
               ListTile(
                 dense: true,
                 contentPadding: EdgeInsets.zero,
-                leading: const Icon(Icons.system_update_alt_rounded),
-                title: Text(
-                  'حساب ' + (row['user_id']?.toString() ?? '').substring(0, 8),
+                leading: Icon(
+                  _isOld(row) ? Icons.system_update_alt_rounded : Icons.verified_rounded,
+                  color: _isOld(row) ? Colors.orange : Colors.green,
                 ),
+                title: Text(_userLabel(row)),
                 subtitle: Text(
                   'الإصدار ' + (row['app_version']?.toString() ?? '-') +
                       '+' + (row['build_number']?.toString() ?? '0'),
                 ),
+                trailing: Text(_isOld(row) ? 'قديم' : 'محدّث'),
               ),
+            if (installs.length > 50)
+              Text('يتم عرض أول 50 حسابًا من أصل ' + installs.length.toString()),
           ],
         ],
       ),
