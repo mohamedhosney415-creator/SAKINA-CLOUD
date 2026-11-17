@@ -51,6 +51,7 @@ properties = (
     "keyPassword=" + prop_escape(key_password) + "\n" +
     "keyAlias=" + prop_escape(key_alias) + "\n" +
     "storeFile=sakina-release.jks\n"
+    "storeType=JKS\n"
 )
 (android / "key.properties").write_text(properties, encoding="utf-8")
 
@@ -95,6 +96,7 @@ signing = """
             keyAlias = sakinaKeystoreProperties["keyAlias"] as String
             keyPassword = sakinaKeystoreProperties["keyPassword"] as String
             storeFile = file(sakinaKeystoreProperties["storeFile"] as String)
+            storeType = sakinaKeystoreProperties["storeType"] as String
             storePassword = sakinaKeystoreProperties["storePassword"] as String
         }
     }

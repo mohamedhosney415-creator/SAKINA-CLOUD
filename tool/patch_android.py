@@ -232,6 +232,7 @@ if (sakinaKeystorePropertiesFile.exists()) {
         create("sakinaRelease") {
             if (sakinaKeystorePropertiesFile.exists()) {
                 storeFile = file(sakinaKeystoreProperties["storeFile"] as String)
+                storeType = sakinaKeystoreProperties["storeType"] as String
                 storePassword = sakinaKeystoreProperties["storePassword"] as String
                 keyAlias = sakinaKeystoreProperties["keyAlias"] as String
                 keyPassword = sakinaKeystoreProperties["keyPassword"] as String
@@ -251,6 +252,7 @@ if (sakinaKeystorePropertiesFile.exists()) {
         sakinaRelease {
             if (sakinaKeystorePropertiesFile.exists()) {
                 storeFile file(sakinaKeystoreProperties['storeFile'])
+                storeType sakinaKeystoreProperties['storeType']
                 storePassword sakinaKeystoreProperties['storePassword']
                 keyAlias sakinaKeystoreProperties['keyAlias']
                 keyPassword sakinaKeystoreProperties['keyPassword']
