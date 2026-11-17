@@ -220,6 +220,7 @@ class _AdminUpdateManagementPanelState extends State<AdminUpdateManagementPanel>
             decoration: const InputDecoration(labelText: 'رابط ملف APK'),
           ),
           TextField(
+            enabled: settings['mandatory'] == true,
             controller: _minimum,
             decoration: const InputDecoration(labelText: 'أقل إصدار مسموح به'),
           ),
