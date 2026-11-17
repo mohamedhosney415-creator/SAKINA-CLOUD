@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import '../cloud/cloud_service.dart';
+import '../services/update_service.dart';
 import 'quran_game/services/quran_game_service.dart';
 import '../core/theme.dart';
 import '../core/widgets.dart';
@@ -35,6 +36,7 @@ class _AuthPageState extends State<AuthPage> {
         await CloudService.signIn(email.text.trim(), password.text);
       }
       await CloudService.recordLogin();
+      await UpdateService.reportInstall();
       await CloudService.pullLocalData();
       // Game progress is synced separately so it can never overwrite
       // unrelated SAKINA data.
