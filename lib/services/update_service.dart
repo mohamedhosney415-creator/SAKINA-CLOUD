@@ -218,8 +218,7 @@ class UpdateService {
                 if (CloudService.enabled && !CloudService.signedIn)
                   FilledButton(
                     onPressed: busy ? null : () {
-                      Navigator.pop(dialogContext);
-                      Navigator.of(context).push(
+                      Navigator.of(context).pushReplacement(
                         MaterialPageRoute(builder: (_) => const AuthPage()),
                       );
                     },
