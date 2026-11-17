@@ -100,7 +100,7 @@ class _MorePageState extends State<MorePage> {
               Icons.dark_mode_rounded, const RamadanPage()),
         ]),
         _MoreGroup('الحساب والتطبيق', [
-          if (CloudService.signedIn) _MoreItem('رسائل سكينة', 'رسائل المالك والتنبيهات المرسلة لك', Icons.mark_email_rounded, const MessagesPage()),
+          if (CloudService.signedIn) _MoreItem('رسائل سكينة', 'رسائل المالك والتنبيهات المرسلة لك', Icons.mark_email_unread_rounded, const MessagesPage()),
           _MoreItem('حساب سكينة', 'تسجيل الدخول والمزامنة السحابية',
               Icons.account_circle_rounded, const AccountPage()),
           if (_isOwner)
