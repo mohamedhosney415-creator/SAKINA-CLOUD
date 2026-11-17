@@ -9,7 +9,6 @@ import '../../../core/widgets.dart';
 import '../../../services/audio_controller.dart';
 import '../models/quran_game_question.dart';
 import '../services/quran_game_service.dart';
-import '../../../services/quran_service.dart';
 import 'quran_game_aux_pages.dart';
 
 /// الواجهة المستقلة للعبة: جلسة ليلية، XP، أهداف، مسار ومحطات وتنقل داخلي.
@@ -976,21 +975,35 @@ class QuranGameQuizPage extends StatefulWidget {
 class _QuranGameQuizPageState extends State<QuranGameQuizPage> {
   late QuranGameQuestion q;
   String? selected;
-  String? previousAyah;
-  String? nextAyah;
   bool? correct;
   bool loading = false;
   bool showHint = false;
   List<String>? choices;
   bool hasSecondChance = false;
-  Future<void> _loadAdjacentAyahs() async {
-    if (!q.isQuran) return;
-    try {
-      final verses = await QuranService.text(q.surahNumber);
-      final i = verses.indexWhere((a) => a.n == q.ayahNumber);
-      if (!mounted || i < 0) return;
-      setState(() { previousAyah = i > 0 ? verses[i - 1].text : null; nextAyah = i + 1 < verses.length ? verses[i + 1].text : null; });
-    } catch (_) {}
+  String _normalizedArabicWord(String value) => value
+      .replaceAll(RegExp('[\\u064B-\\u065F\\u0670\\u06D6-\\u06ED\\u08D3-\\u08FF]'), '')
+      .replaceAll(RegExp(r'[۞،؛.!؟…]'), '')
+      .trim();
+
+  String _wordWindow() {
+    final words = q.fullAyah.trim().split(RegExp(r'\\s+'));
+    if (words.isEmpty || words.first.isEmpty) return q.fullAyah;
+    final hidden = _normalizedArabicWord(q.hiddenWord);
+    var index = words.indexWhere((word) {
+      final candidate = _normalizedArabicWord(word);
+      return candidate == hidden || candidate.contains(hidden);
+    });
+    if (index < 0) {
+      final maskedWords = q.maskedAyah.trim().split(RegExp(r'\\s+'));
+      index = maskedWords.indexWhere((word) => word.contains('ــــ'));
+    }
+    if (index < 0) return words.take(11).join(' ');
+
+    final start = max(0, index - 5);
+    final end = min(words.length - 1, index + 5);
+    final visible = words.sublist(start, end + 1);
+    if (selected == null) visible[index - start] = 'ــــــــ';
+    return visible.join(' ');
   }
 
   TextSpan _quranText(String text, double size, Color color) {
@@ -1026,7 +1039,6 @@ class _QuranGameQuizPageState extends State<QuranGameQuizPage> {
       requestedLevel: QuranGameService.level,
       daily: widget.daily,
     );
-    _loadAdjacentAyahs();
   }
 
   @override
@@ -1109,8 +1121,6 @@ class _QuranGameQuizPageState extends State<QuranGameQuizPage> {
       showHint = false;
       choices = null;
       hasSecondChance = false;
-      previousAyah = null;
-      nextAyah = null;
     });
     _loadAdjacentAyahs();
   }
@@ -1249,60 +1259,15 @@ class _QuranGameQuizPageState extends State<QuranGameQuizPage> {
                         ),
                       ],
                     ),
-                    child: Column(
-                      children: [
-                        if (previousAyah != null) ...[
-                          const Text(
-                            'الآية السابقة',
-                            style: TextStyle(
-                              color: Colors.white70,
-                              fontSize: 11,
-                              fontWeight: FontWeight.w800,
-                            ),
-                          ),
-                          const SizedBox(height: 7),
-                          Text.rich(
-                            _quranText(previousAyah!, 19, Colors.white),
-                            textAlign: TextAlign.center,
-                            textDirection: TextDirection.rtl,
-                          ),
-                          const Padding(
-                            padding: EdgeInsets.symmetric(vertical: 15),
-                            child: Divider(color: Color(0x5578A99B), height: 1),
-                          ),
-                        ],
-                        Text.rich(
-                          _quranText(
-                            answered || !q.isCompleteWord
-                                ? q.fullAyah
-                                : q.maskedAyah,
-                            30,
-                            Colors.white,
-                          ),
-                          textAlign: TextAlign.center,
-                          textDirection: TextDirection.rtl,
-                        ),
-                        if (nextAyah != null) ...[
-                          const Padding(
-                            padding: EdgeInsets.symmetric(vertical: 15),
-                            child: Divider(color: Color(0x5578A99B), height: 1),
-                          ),
-                          const Text(
-                            'الآية التالية',
-                            style: TextStyle(
-                              color: Colors.white70,
-                              fontSize: 11,
-                              fontWeight: FontWeight.w800,
-                            ),
-                          ),
-                          const SizedBox(height: 7),
-                          Text.rich(
-                            _quranText(nextAyah!, 19, Colors.white),
-                            textAlign: TextAlign.center,
-                            textDirection: TextDirection.rtl,
-                          ),
-                        ],
-                      ],
+                    child: Text.rich(
+                      _quranText(
+                        q.isCompleteWord ? _wordWindow() : q.fullAyah,
+                        30,
+                        Colors.white,
+                      ),
+                      textAlign: TextAlign.center,
+                      textDirection: TextDirection.rtl,
+                    ),
                     ),
                   ),
                 ] else ...[
