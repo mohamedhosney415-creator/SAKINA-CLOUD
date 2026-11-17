@@ -64,6 +64,24 @@ void main() {
     expect(QuranGameConfig.questionsPerLevelFor(0), 5);
   });
 
+  test('level six requires six answers before it advances', () async {
+    await Store.setInt('qgame_level', 6);
+    final questions =
+        quranGameBank.take(6).map((q) => q.copyWith(level: 6)).toList();
+
+    for (final question in questions.take(5)) {
+      await QuranGameService.answer(question, true);
+    }
+    expect(QuranGameService.questionsAnsweredInCurrentLevel, 5);
+    expect(await QuranGameService.completeLevelIfReady(), isFalse);
+    expect(QuranGameService.level, 6);
+
+    await QuranGameService.answer(questions.last, true);
+    expect(QuranGameService.questionsAnsweredInCurrentLevel, 6);
+    expect(await QuranGameService.completeLevelIfReady(), isTrue);
+    expect(QuranGameService.level, 7);
+  });
+
   test(
     'five correct unique answers complete the first perfect level exactly once',
     () async {
