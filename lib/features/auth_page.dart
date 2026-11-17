@@ -1,5 +1,6 @@
 import 'dart:async';
 import 'package:flutter/material.dart';
+import 'package:supabase_flutter/supabase_flutter.dart';
 import '../cloud/cloud_service.dart';
 import '../services/update_service.dart';
 import 'quran_game/services/quran_game_service.dart';
