@@ -9,6 +9,17 @@ class _MessagesPageState extends State<MessagesPage> {
     if(s.connectionState!=ConnectionState.done) return const Center(child:CircularProgressIndicator());
     if(s.hasError) return const Center(child:Text('تعذر تحميل الرسائل.'));
     final rows=s.data??const []; if(rows.isEmpty) return const Center(child:Text('لا توجد رسائل.'));
-    return ListView.builder(padding:const EdgeInsets.all(16),itemCount:rows.length,itemBuilder:(context,i){final m=rows[i];return Card(child:ListTile(leading:const Icon(Icons.mark_email_unread_rounded),title:Text('${m['title']??'رسالة'}',style:const TextStyle(fontWeight:FontWeight.w800)),subtitle:Padding(padding:const EdgeInsets.only(top:6),child:Text('${m['body']??''}\n\n${m['created_at']??''}')),isThreeLine:true));});
+    return ListView.builder(padding:const EdgeInsets.all(16),itemCount:rows.length,itemBuilder:(context,i){final m=rows[i];return Card(child:ListTile(
+      leading:Icon(m['read_at']==null?Icons.mark_email_unread_rounded:Icons.drafts_rounded),
+      title:Text('${m['title']??'رسالة'}',style:const TextStyle(fontWeight:FontWeight.w800)),
+      subtitle:Padding(padding:const EdgeInsets.only(top:6),child:Text('${m['body']??''}\n\n${m['created_at']??''}')),
+      isThreeLine:true,
+      onTap: () async {
+        if (m['read_at'] == null) {
+          await CloudService.markMessageRead('${m['id']}');
+          if (context.mounted) setState(() { m['read_at'] = DateTime.now().toIso8601String(); });
+        }
+      },
+    ));});
   }));
 }
