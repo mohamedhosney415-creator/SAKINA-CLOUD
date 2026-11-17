@@ -72,6 +72,7 @@ class _QuranGamePageState extends State<QuranGamePage> {
   }
 
   Future<void> _refreshGameState() async {
+    await QuranGameService.syncFromCloud();
     await QuranGameService.loadRemoteQuestions();
     if (mounted) setState(() {});
   }
