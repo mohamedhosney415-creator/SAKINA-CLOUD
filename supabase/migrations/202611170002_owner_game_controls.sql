@@ -9,6 +9,10 @@ set highest_level = greatest(
   least(100, greatest(1, coalesce((data->>'qgame_level')::integer, 1)))
 );
 
+update public.game_progress
+set data = jsonb_set(coalesce(data, '{}'::jsonb), '{qgame_highest_level}', to_jsonb(highest_level), true)
+where not (coalesce(data, '{}'::jsonb) ? 'qgame_highest_level');
+
 create table if not exists public.app_control (
   id smallint primary key default 1 check (id = 1),
   game_enabled boolean not null default true,
