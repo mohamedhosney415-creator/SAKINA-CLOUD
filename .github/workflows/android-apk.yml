@@ -75,7 +75,7 @@ jobs:
           storeFile=../branch-test.keystore
           storePassword=branch-test-storepass
           keyAlias=sakina-branch-test
-          keyPassword=branch-test-keypass
+          keyPassword=branch-test-storepass
           EOF
           fi
 
@@ -88,9 +88,8 @@ jobs:
       - name: Analyze Dart code
         run: flutter analyze --no-fatal-infos --no-fatal-warnings
 
-      # Supabase secrets are retained; signing secrets are intentionally not used.
-      # The generated Android debug keystore is used for signing this Release build.
-      - name: Build split Release APKs (Supabase optional, no signing secrets)
+      # Supabase secrets are retained; release signing is handled above.
+      - name: Build split Release APKs (Supabase optional)
         env:
           SUPABASE_URL: ${{ secrets.SUPABASE_URL }}
           SUPABASE_PUBLISHABLE_KEY: ${{ secrets.SUPABASE_PUBLISHABLE_KEY }}
