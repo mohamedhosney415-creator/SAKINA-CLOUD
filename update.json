@@ -2,12 +2,12 @@
   "latestVersion": "4.9.2",
   "latestBuild": 19,
   "latestBuildNumber": 19,
-  "apkUrl": "https://github.com/mohamedhosney415-creator/SAKINA-CLOUD/releases/download/v4.9.2-19-build-418/app-release.apk",
+  "apkUrl": "https://github.com/mohamedhosney415-creator/SAKINA-CLOUD/releases/download/v4.9.2-19-build-419/app-release.apk",
   "minimumVersion": "",
   "minimumBuildNumber": 0,
   "notes": "احفظ بياناتك وسجّل الدخول بنفس الحساب بعد التثبيت لاستعادتها. إذا طلب Android إزالة النسخة القديمة، تأكد من اكتمال تنزيل النسخة الجديدة أولًا.",
   "showUpdate": true,
   "autoCheck": true,
   "mandatory": false,
-  "publishedAt": "2026-11-17T22:43:32Z"
+  "publishedAt": "2026-11-17T23:58:45Z"
 }
