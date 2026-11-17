@@ -134,19 +134,21 @@ class _AdminUpdateManagementPanelState extends State<AdminUpdateManagementPanel>
           Uri.tryParse(url)?.hasScheme != true) {
         throw const FormatException('تحقق من رقم الإصدار والبناء ورابط APK.');
       }
-      if (mandatory == true && _minimum.text.trim().isEmpty) {
+      final forceUpdate = mandatory ?? (settings['mandatory'] == true);
+      if (forceUpdate && _minimum.text.trim().isEmpty) {
         _minimum.text = version;
       }
+      if (!forceUpdate) _minimum.clear();
       final values = <String, dynamic>{
         'latest_version': version,
         'latest_build': build,
         'apk_url': url,
         'minimum_version':
-            _minimum.text.trim().isEmpty ? null : _minimum.text.trim(),
+            forceUpdate ? _minimum.text.trim() : null,
         'notes': _notes.text.trim(),
         'show_update': showUpdate ?? (settings['show_update'] == true),
         'auto_check': autoCheck ?? (settings['auto_check'] != false),
-        'mandatory': mandatory ?? (settings['mandatory'] == true),
+        'mandatory': forceUpdate,
       };
       await CloudService.saveAppUpdateSettings(values);
       if (!mounted) return;
