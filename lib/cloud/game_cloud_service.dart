@@ -146,7 +146,7 @@ class GameCloudService {
   }
 
   static Future<Map<String, dynamic>> controlState() async {
-    if (!enabled) return const {'game_enabled': true, 'maintenance_message': ''};
+    if (!CloudService.enabled) return const {'game_enabled': true, 'maintenance_message': ''};
     final row = await client.from('app_control').select('game_enabled,maintenance_message,updated_at').eq('id', 1).maybeSingle();
     return row == null ? const {'game_enabled': true, 'maintenance_message': ''} : Map<String, dynamic>.from(row);
   }
