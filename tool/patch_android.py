@@ -102,6 +102,27 @@ if MARK not in s:
 else:
     print('manifest already patched')
 
+# ---------------------------------------------------------------- OAuth deep link callback
+# Supabase redirects Google OAuth back into the Android app.
+if 'SAKINA_OAUTH_REDIRECT' not in s:
+    oauth_filter = '''
+            <!-- SAKINA_OAUTH_REDIRECT -->
+            <intent-filter>
+                <action android:name="android.intent.action.VIEW"/>
+                <category android:name="android.intent.category.DEFAULT"/>
+                <category android:name="android.intent.category.BROWSABLE"/>
+                <data android:scheme="com.hosny.sakina" android:host="login-callback"/>
+            </intent-filter>
+'''
+    s, count = re.subn(
+        r'(<activity\\b(?=[^>]*android:name="[^"]*MainActivity")[^>]*>)(.*?)(</activity>)',
+        lambda m: m.group(1) + m.group(2) + oauth_filter + m.group(3),
+        s, count=1, flags=re.S)
+    if count == 0:
+        fail('تعذر إضافة رابط رجوع Google إلى MainActivity')
+    write(mf, s)
+    print('Google OAuth deep link added')
+
 # ---------------------------------------------------------------- 2) MainActivity + widget provider
 kt_files = glob.glob(os.path.join(MAIN, 'kotlin', '**', 'MainActivity.kt'), recursive=True)
 if not kt_files:
