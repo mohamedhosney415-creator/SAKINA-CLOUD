@@ -1,3 +1,4 @@
+import 'dart:async';
 import 'package:flutter/material.dart';
 import '../cloud/cloud_service.dart';
 import '../services/update_service.dart';
@@ -18,6 +19,46 @@ class _AuthPageState extends State<AuthPage> {
   bool loading = false;
   bool showPassword = false;
   String? error;
+  StreamSubscription<dynamic>? authSubscription;
+  bool finishing = false;
+
+  @override
+  void initState() {
+    super.initState();
+    authSubscription = CloudService.client.auth.onAuthStateChange.listen((state) {
+      if (state.event == AuthChangeEvent.signedIn && state.session != null) {
+        _completeLogin();
+      }
+    });
+  }
+
+  Future<void> _completeLogin() async {
+    if (finishing) return;
+    finishing = true;
+    try {
+      await CloudService.recordLogin();
+      await UpdateService.reportInstall();
+      await CloudService.pullLocalData();
+      await QuranGameService.syncFromCloud();
+      await QuranGameService.loadRemoteQuestions();
+      if (mounted) await UpdateService.showIfNeeded(context);
+      if (mounted) Navigator.of(context).pop();
+    } catch (_) {
+      finishing = false;
+      if (mounted) setState(() => error = 'تم تسجيل الدخول لكن تعذرت مزامنة البيانات.');
+    }
+  }
+
+  Future<void> signInGoogle() async {
+    setState(() { loading = true; error = null; });
+    try {
+      await CloudService.signInWithGoogle();
+    } catch (_) {
+      if (mounted) setState(() => error = 'تعذر فتح تسجيل Google. تأكد من تفعيل Google في إعدادات Supabase وإضافة رابط التحويل.');
+    } finally {
+      if (mounted) setState(() => loading = false);
+    }
+  }
 
   Future<void> submit() async {
     FocusScope.of(context).unfocus();
@@ -35,15 +76,7 @@ class _AuthPageState extends State<AuthPage> {
       } else {
         await CloudService.signIn(email.text.trim(), password.text);
       }
-      await CloudService.recordLogin();
-      await UpdateService.reportInstall();
-      await CloudService.pullLocalData();
-      // Game progress is synced separately so it can never overwrite
-      // unrelated SAKINA data.
-      await QuranGameService.syncFromCloud();
-      await QuranGameService.loadRemoteQuestions();
-      await UpdateService.showIfNeeded(context);
-      if (mounted) Navigator.of(context).pop();
+      await _completeLogin();
     } catch (_) {
       if (mounted) {
         setState(() => error = register
@@ -57,6 +90,7 @@ class _AuthPageState extends State<AuthPage> {
 
   @override
   void dispose() {
+    authSubscription?.cancel();
     email.dispose();
     password.dispose();
     super.dispose();
@@ -190,6 +224,17 @@ class _AuthPageState extends State<AuthPage> {
                       label: Text(register ? 'إنشاء الحساب' : 'تسجيل الدخول'),
                     ),
                   ),
+                  if (!register) ...[
+                    const SizedBox(height: 10),
+                    SizedBox(
+                      width: double.infinity,
+                      child: OutlinedButton.icon(
+                        onPressed: loading ? null : signInGoogle,
+                        icon: const Icon(Icons.g_mobiledata_rounded, size: 28),
+                        label: const Text('المتابعة باستخدام Google'),
+                      ),
+                    ),
+                  ],
                 ],
               ),
             ),
