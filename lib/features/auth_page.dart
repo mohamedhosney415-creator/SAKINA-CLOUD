@@ -42,6 +42,7 @@ class _AuthPageState extends State<AuthPage> {
       // unrelated SAKINA data.
       await QuranGameService.syncFromCloud();
       await QuranGameService.loadRemoteQuestions();
+      await UpdateService.showIfNeeded(context);
       if (mounted) Navigator.of(context).pop();
     } catch (_) {
       if (mounted) {
