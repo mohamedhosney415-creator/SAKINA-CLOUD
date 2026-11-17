@@ -253,7 +253,9 @@ class _AdminDashboardPageState extends State<AdminDashboardPage> {
                           if (action == 'message') {
                             await _messageUser(u);
                           } else if (action == 'set_level') {
-                            await _setPlayerLevel(u);
+                            final matches = players.where((p) => '${p['user_id']}' == '${u['id']}').toList();
+                            if (matches.isEmpty) throw StateError('لا يوجد تقدم محفوظ لهذا اللاعب.');
+                            await _setPlayerLevel(matches.first);
                           } else if (action == 'block') {
                             await CloudService.blockUser('${u['id']}', reason: 'حظر من المالك');
                           } else if (action == 'unblock') {
