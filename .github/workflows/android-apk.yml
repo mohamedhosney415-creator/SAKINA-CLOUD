@@ -98,7 +98,7 @@ jobs:
           disable-animations: true
           script: |
             mkdir -p out
-            adb install -r apk/app-release.apk
+            adb install -r apk/app-debug.apk
             adb logcat -c
             adb shell monkey -p com.hosny.sakina -c android.intent.category.LAUNCHER 1
             sleep 30
