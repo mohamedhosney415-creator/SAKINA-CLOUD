@@ -6,6 +6,7 @@ import 'core/store.dart';
 import 'services/favorites.dart';
 import 'services/notification_service.dart';
 import 'cloud/cloud_service.dart';
+import 'services/update_service.dart';
 import 'features/quran_game/services/quran_game_service.dart';
 
 /// الإقلاع الخفيف: نجهّز فقط ما تحتاجه الشاشة الأولى ثم نشغّل الواجهة فورًا.
@@ -23,6 +24,7 @@ Future<void> main() async {
     if (CloudService.signedIn) {
       await QuranGameService.syncFromCloud();
       await QuranGameService.loadRemoteQuestions();
+      await UpdateService.reportInstall();
     }
     NotificationService.initTimeZones();
     Diag.i.ok('timezones');
