@@ -6,7 +6,7 @@ import 'package:package_info_plus/package_info_plus.dart';
 import 'package:url_launcher/url_launcher.dart';
 
 import '../cloud/cloud_service.dart';
-import '../services/backup_service.dart';
+import 'backup_service.dart';
 import '../features/auth_page.dart';
 
 class SakinaUpdateInfo {
@@ -153,6 +153,7 @@ class UpdateService {
         var busy = false;
         var backupDone = false;
         String? error;
+        String? note;
         return StatefulBuilder(
           builder: (dialogContext, setDialogState) => PopScope(
             canPop: !mandatory,
@@ -168,9 +169,11 @@ class UpdateService {
                     Text(info.notes!),
                   ],
                   const SizedBox(height: 12),
-                  const Text(
-                    'لحماية بياناتك: سنحفظ نسخة من بيانات جهازك ونسخة من بيانات السحابة قبل اعتماد المزامنة. لن نتابع إذا لم نتأكد من نجاح الحفظ.',
-                    style: TextStyle(height: 1.6),
+                  Text(
+                    CloudService.enabled
+                        ? 'لحماية بياناتك: سنحفظ نسخة من بيانات جهازك ونسخة من بيانات السحابة السابقة قبل اعتماد المزامنة. لن نتابع إذا لم نتأكد من نجاح الحفظ.'
+                        : 'المزامنة السحابية غير مفعّلة في هذه النسخة؛ صدّر ملف النسخة الاحتياطية واحتفظ به لاستعادته يدويًا بعد التثبيت.',
+                    style: const TextStyle(height: 1.6),
                   ),
                   const SizedBox(height: 8),
                   const Text(
@@ -183,10 +186,16 @@ class UpdateService {
                   ],
                   if (backupDone) ...[
                     const SizedBox(height: 10),
-                    const Text(
-                      'تم حفظ النسخة الاحتياطية والتحقق منها. بياناتك السحابية جاهزة للاستعادة بعد التثبيت.',
-                      style: TextStyle(color: Colors.green, fontWeight: FontWeight.w700),
+                    Text(
+                      CloudService.enabled
+                          ? 'تم حفظ النسخة الاحتياطية والتحقق منها. بياناتك السحابية جاهزة للاستعادة بعد التثبيت.'
+                          : 'تم تصدير الملف. احتفظ به، ثم استعده يدويًا بعد تثبيت النسخة الجديدة.',
+                      style: const TextStyle(color: Colors.green, fontWeight: FontWeight.w700),
                     ),
+                  ],
+                  if (note != null) ...[
+                    const SizedBox(height: 8),
+                    Text(note!, style: const TextStyle(height: 1.5)),
                   ],
                   if (error != null) ...[
                     const SizedBox(height: 10),
@@ -226,7 +235,8 @@ class UpdateService {
                         setDialogState(() {
                           busy = false;
                           backupDone = true;
-                          error = 'تم تصدير الملف. بعد تثبيت النسخة الجديدة، افتح النسخ الاحتياطي واختر استعادة من ملف.';
+                          error = null;
+                          note = 'بعد التثبيت، افتح النسخ الاحتياطي واختر استعادة من ملف.';
                         });
                       } catch (_) {
                         if (!dialogContext.mounted) return;
