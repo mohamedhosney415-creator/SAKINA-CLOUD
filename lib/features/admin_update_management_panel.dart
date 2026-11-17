@@ -13,8 +13,8 @@ class AdminUpdateManagementPanel extends StatefulWidget {
 }
 
 class _AdminUpdateManagementPanelState extends State<AdminUpdateManagementPanel> {
-  final _version = TextEditingController(text: '4.9.1');
-  final _build = TextEditingController(text: '18');
+  final _version = TextEditingController(text: '4.9.2');
+  final _build = TextEditingController(text: '19');
   final _minimum = TextEditingController();
   final _apk = TextEditingController(
     text: 'https://github.com/mohamedhosney415-creator/SAKINA-CLOUD/releases/latest/download/app-release.apk',
@@ -22,6 +22,11 @@ class _AdminUpdateManagementPanelState extends State<AdminUpdateManagementPanel>
   final _notes = TextEditingController();
   Map<String, dynamic> settings = {};
   List<Map<String, dynamic>> installs = [];
+  List<Map<String, dynamic>> profiles = [];
+  int get unreportedCount {
+    final ids = installs.map((row) => row['user_id']?.toString()).toSet();
+    return profiles.where((profile) => !ids.contains(profile['id']?.toString())).length;
+  }
   bool loading = true;
   bool busy = false;
   String? error;
@@ -61,11 +66,13 @@ class _AdminUpdateManagementPanelState extends State<AdminUpdateManagementPanel>
       final values = await Future.wait([
         CloudService.appUpdateSettings(),
         CloudService.adminAppInstalls(),
+        CloudService.adminUsers(),
       ]);
       final remote = Map<String, dynamic>.from((values[0] as Map?) ?? {});
       final rows = List<Map<String, dynamic>>.from(values[1] as List);
-      _version.text = remote['latest_version']?.toString() ?? '4.9.1';
-      _build.text = remote['latest_build']?.toString() ?? '18';
+      final accounts = List<Map<String, dynamic>>.from(values[2] as List);
+      _version.text = remote['latest_version']?.toString() ?? '4.9.2';
+      _build.text = remote['latest_build']?.toString() ?? '19';
       _minimum.text = remote['minimum_version']?.toString() ?? '';
       _apk.text = remote['apk_url']?.toString() ?? _apk.text;
       _notes.text = remote['notes']?.toString() ?? '';
@@ -73,6 +80,7 @@ class _AdminUpdateManagementPanelState extends State<AdminUpdateManagementPanel>
       setState(() {
         settings = remote;
         installs = rows;
+        profiles = accounts;
         loading = false;
       });
     } catch (_) {
@@ -188,8 +196,9 @@ class _AdminUpdateManagementPanelState extends State<AdminUpdateManagementPanel>
           ),
           const SizedBox(height: 6),
           Text(
-            'الحسابات المسجلة: ' + installs.length.toString() +
-                ' • الإصدارات القديمة: ' + outdatedCount.toString(),
+            'حسابات أرسلت إصدارها: ' + installs.length.toString() +
+                ' • قديمة: ' + outdatedCount.toString() +
+                ' • لم ترسل بعد: ' + unreportedCount.toString(),
             style: const TextStyle(color: Colors.grey),
           ),
           const SizedBox(height: 12),
