@@ -115,7 +115,7 @@ jobs:
           RELEASE_NOTES: "يتوفر إصدار جديد من سكينة. افتح التطبيق واتبع رسالة التحديث."
         run: |
           set -euo pipefail
-          git fetch origin main
+          git fetch origin +refs/heads/main:refs/remotes/origin/main
           git checkout -B update-manifest origin/main
           APK_URL="https://github.com/${REPOSITORY}/releases/download/${RELEASE_TAG}/app-release.apk"
           jq -n \
