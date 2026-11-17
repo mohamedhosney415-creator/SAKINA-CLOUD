@@ -194,6 +194,81 @@ elif os.path.exists(groovy):
 else:
     fail('لم أجد build.gradle(.kts) داخل android/app')
 
+# ---------------------------------------------------------------- 6) توقيع Release بمفتاح ثابت (اختياري أثناء اختبارات الفرع)
+def configure_release_signing(path, kotlin_dsl):
+    g = read(path)
+    if 'SAKINA_RELEASE_SIGNING' in g:
+        print('persistent release signing already configured')
+        return
+    props = '''
+// SAKINA_RELEASE_SIGNING: load the persistent upload key from android/key.properties
+val sakinaKeystoreProperties = java.util.Properties()
+val sakinaKeystorePropertiesFile = rootProject.file("key.properties")
+if (sakinaKeystorePropertiesFile.exists()) {
+    sakinaKeystoreProperties.load(java.io.FileInputStream(sakinaKeystorePropertiesFile))
+}
+''' if kotlin_dsl else '''
+// SAKINA_RELEASE_SIGNING: load the persistent upload key from android/key.properties
+def sakinaKeystoreProperties = new Properties()
+def sakinaKeystorePropertiesFile = rootProject.file('key.properties')
+if (sakinaKeystorePropertiesFile.exists()) {
+    sakinaKeystoreProperties.load(new FileInputStream(sakinaKeystorePropertiesFile))
+}
+'''
+    android_open = re.search(r'^android\\s*\\{', g, re.M)
+    if not android_open:
+        fail('تعذر العثور على android block لإعداد توقيع الإصدار')
+    g = g[:android_open.start()] + props + '\\n' + g[android_open.start():]
+    android_open = re.search(r'^android\\s*\\{', g, re.M)
+    if kotlin_dsl:
+        signing = '''
+    signingConfigs {
+        create("sakinaRelease") {
+            if (sakinaKeystorePropertiesFile.exists()) {
+                storeFile = file(sakinaKeystoreProperties["storeFile"] as String)
+                storePassword = sakinaKeystoreProperties["storePassword"] as String
+                keyAlias = sakinaKeystoreProperties["keyAlias"] as String
+                keyPassword = sakinaKeystoreProperties["keyPassword"] as String
+            } else {
+                initWith(getByName("debug"))
+            }
+        }
+    }
+'''
+        g = g[:android_open.end()] + signing + g[android_open.end():]
+        g, n = re.subn(
+            r'signingConfig\\s*=\\s*signingConfigs\\.getByName\\(["\\']debug["\\']\\)',
+            'signingConfig = signingConfigs.getByName("sakinaRelease")', g, count=1)
+    else:
+        signing = '''
+    signingConfigs {
+        sakinaRelease {
+            if (sakinaKeystorePropertiesFile.exists()) {
+                storeFile file(sakinaKeystoreProperties['storeFile'])
+                storePassword sakinaKeystoreProperties['storePassword']
+                keyAlias sakinaKeystoreProperties['keyAlias']
+                keyPassword sakinaKeystoreProperties['keyPassword']
+            } else {
+                initWith signingConfigs.debug
+            }
+        }
+    }
+'''
+        g = g[:android_open.end()] + signing + g[android_open.end():]
+        g, n = re.subn(
+            r'signingConfig\\s*=\\s*signingConfigs\\.debug',
+            'signingConfig signingConfigs.sakinaRelease', g, count=1)
+    if n == 0:
+        fail('تعذر ربط buildTypes.release بمفتاح SAKINA الثابت')
+    write(path, g)
+    print('persistent release signing configured (debug fallback only for branch validation)')
+
+
+if os.path.exists(kts):
+    configure_release_signing(kts, True)
+else:
+    configure_release_signing(groovy, False)
+
 # ---------------------------------------------------------------- 6) تعطيل R8/التصغير في الإصدار
 # مكتبات الإشعارات والصوت تستعمل reflection/Gson وقد تتعطل أو تغلق التطبيق مع R8.
 def disable_shrink(path, groovy_syntax):
