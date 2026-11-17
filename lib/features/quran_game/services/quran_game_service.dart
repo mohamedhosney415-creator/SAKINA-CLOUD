@@ -58,8 +58,22 @@ class QuranGameConfig {
 class QuranGameService {
   static final _random = Random();
   static List<QuranGameQuestion>? _remoteQuestions;
+  static bool _gameEnabled = true;
+  static String _maintenanceMessage = 'اللعبة متوقفة مؤقتًا للصيانة. حاول مرة أخرى لاحقًا.';
+
+  static Future<void> refreshGameControl() async {
+    try {
+      final state = await GameCloudService.controlState();
+      _gameEnabled = state['game_enabled'] != false;
+      final message = state['maintenance_message']?.toString().trim() ?? '';
+      if (message.isNotEmpty) _maintenanceMessage = message;
+    } catch (_) {
+      // Keep the last known state while offline.
+    }
+  }
 
   static Future<void> loadRemoteQuestions() async {
+    await refreshGameControl();
     try {
       final rows = await GameCloudService.fetchQuestions();
       if (rows.length >= 100) {
@@ -129,6 +143,9 @@ class QuranGameService {
         ...religiousGameBank,
       ];
   static int get level => Store.integer('qgame_level', 1).clamp(1, 100).toInt();
+  static int get highestLevel => Store.integer('qgame_highest_level', level).clamp(1, 100).toInt();
+  static String get maintenanceMessage => _maintenanceMessage;
+  static bool get gameEnabled => _gameEnabled;
   static int get score =>
       Store.integer('qgame_score').clamp(0, 1 << 30).toInt();
   static int get xp => score;
@@ -191,10 +208,14 @@ class QuranGameService {
     int requestedLevel = 1,
     bool daily = false,
   }) {
+    if (!_gameEnabled) throw StateError(_maintenanceMessage);
     if (daily && dailyAnswered >= QuranGameConfig.dailyQuestions) {
       throw StateError('Daily challenge is already complete');
     }
     final safeLevel = requestedLevel.clamp(1, 100);
+    if (!daily && safeLevel > highestLevel) {
+      throw StateError('لا يمكنك فتح مستوى أعلى من أعلى مستوى وصلت إليه.');
+    }
     final levelTotal = daily
         ? QuranGameConfig.dailyQuestions
         : QuranGameConfig.questionsPerLevelFor(safeLevel);
@@ -411,7 +432,10 @@ class QuranGameService {
       ]);
       await _credit(QuranGameConfig.perfectBonus, 'مستوى مثالي');
     }
-    if (level < 100) await Store.setInt('qgame_level', level + 1);
+    if (level < 100) {
+      await Store.setInt('qgame_level', level + 1);
+      await Store.setInt('qgame_highest_level', max(highestLevel, level + 1));
+    }
     await Store.setInt('qgame_level_answered', 0);
     await Store.setInt('qgame_level_correct', 0);
     await Store.setInt('qgame_level_mistakes', 0);
