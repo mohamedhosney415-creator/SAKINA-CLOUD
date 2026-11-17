@@ -1009,6 +1009,8 @@ class QuranGameQuizPage extends StatefulWidget {
 
 class _QuranGameQuizPageState extends State<QuranGameQuizPage> {
   late QuranGameQuestion q;
+  bool ready = false;
+  String? loadError;
   String? selected;
   bool? correct;
   bool loading = false;
@@ -1071,10 +1073,23 @@ class _QuranGameQuizPageState extends State<QuranGameQuizPage> {
   @override
   void initState() {
     super.initState();
-    q = QuranGameService.nextQuestion(
-      requestedLevel: QuranGameService.level,
-      daily: widget.daily,
-    );
+    _prepareQuestion();
+  }
+
+  Future<void> _prepareQuestion() async {
+    await QuranGameService.refreshGameControl();
+    if (!mounted) return;
+    if (QuranGameService.gameEnabled) {
+      try {
+        q = QuranGameService.nextQuestion(
+          requestedLevel: QuranGameService.level,
+          daily: widget.daily,
+        );
+      } catch (error) {
+        loadError = error.toString();
+      }
+    }
+    if (mounted) setState(() => ready = true);
   }
 
   @override
@@ -1195,6 +1210,41 @@ class _QuranGameQuizPageState extends State<QuranGameQuizPage> {
 
   @override
   Widget build(BuildContext context) {
+    if (!ready) {
+      return const Scaffold(body: Center(child: CircularProgressIndicator()));
+    }
+    if (!QuranGameService.gameEnabled || loadError != null) {
+      return Scaffold(
+        appBar: AppBar(title: const Text('لعبة سَكِينَة')),
+        body: Center(
+          child: Padding(
+            padding: const EdgeInsets.all(24),
+            child: Column(
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                const Icon(Icons.info_outline_rounded, size: 52),
+                const SizedBox(height: 12),
+                Text(
+                  !QuranGameService.gameEnabled
+                      ? QuranGameService.maintenanceMessage
+                      : (loadError ?? 'تعذر بدء السؤال.'),
+                  textAlign: TextAlign.center,
+                ),
+                const SizedBox(height: 14),
+                OutlinedButton.icon(
+                  onPressed: () {
+                    setState(() { ready = false; loadError = null; });
+                    _prepareQuestion();
+                  },
+                  icon: const Icon(Icons.refresh_rounded),
+                  label: const Text('إعادة المحاولة'),
+                ),
+              ],
+            ),
+          ),
+        ),
+      );
+    }
     final answered = selected != null;
     final count = widget.daily
         ? QuranGameService.dailyAnswered
