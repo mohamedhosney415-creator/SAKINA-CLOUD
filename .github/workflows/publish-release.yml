@@ -2,9 +2,9 @@ name: Publish SAKINA release
 
 on:
   workflow_run:
-    workflows: ["Build SAKINA APK"]
+    workflows: ["Build SAKINA APK", "Build SAKINA Release APKs"]
     types: [completed]
-    branches: [feature/sakina-5-upgrade]
+    branches: [main, feature/sakina-5-upgrade]
 
 permissions:
   actions: read
@@ -18,7 +18,8 @@ jobs:
   publish:
     if: >-
       ${{ github.event.workflow_run.conclusion == 'success' &&
-          github.event.workflow_run.head_branch == 'feature/sakina-5-upgrade' }}
+          (github.event.workflow_run.head_branch == 'main' ||
+           github.event.workflow_run.head_branch == 'feature/sakina-5-upgrade') }}
     runs-on: ubuntu-latest
     steps:
       - name: Read app version
@@ -30,11 +31,13 @@ jobs:
         id: current
         env:
           GH_TOKEN: ${{ github.token }}
+          BRANCH_NAME: ${{ github.event.workflow_run.head_branch }}
         run: |
-          latest="$(gh api "repos/${GITHUB_REPOSITORY}/git/ref/heads/feature/sakina-5-upgrade" --jq '.object.sha')"
+          set -euo pipefail
+          latest="$(gh api "repos/${GITHUB_REPOSITORY}/git/ref/heads/${BRANCH_NAME}" --jq '.object.sha')"
           if [ "$latest" != "${{ github.event.workflow_run.head_sha }}" ]; then
             echo "publish=false" >> "$GITHUB_OUTPUT"
-            echo "Skipping outdated build; a newer feature branch commit exists."
+            echo "Skipping outdated build; a newer commit exists on $BRANCH_NAME."
           else
             echo "publish=true" >> "$GITHUB_OUTPUT"
           fi
@@ -43,7 +46,7 @@ jobs:
         if: steps.current.outputs.publish == 'true'
         uses: actions/download-artifact@v4
         with:
-          name: SAKINA-apk
+          name: ${{ github.event.workflow_run.head_branch == 'feature/sakina-5-upgrade' && 'SAKINA-release-apks' || 'SAKINA-apk' }}
           path: release-assets
           github-token: ${{ secrets.GITHUB_TOKEN }}
           run-id: ${{ github.event.workflow_run.id }}
@@ -61,26 +64,30 @@ jobs:
             exit 1
           fi
 
-          APK_PATH="$(find release-assets -type f -iname '*.apk' -print -quit)"
-          if [ -z "$APK_PATH" ] || [ ! -s "$APK_PATH" ]; then
-            echo "::error::APK artifact is missing or empty"
+          APK_SOURCE="$(find release-assets -type f -name 'app-release.apk' -print -quit)"
+          if [ -z "$APK_SOURCE" ] || [ ! -s "$APK_SOURCE" ]; then
+            echo "::error::Universal app-release.apk is missing or empty"
             echo "Downloaded files:"
             find release-assets -maxdepth 5 -type f -print || true
             exit 1
           fi
+          cp "$APK_SOURCE" release-assets/app-release.apk
 
+          APP_VERSION="${VERSION%%+*}"
+          BUILD_NUMBER="${VERSION#*+}"
+          if [ "$BUILD_NUMBER" = "$VERSION" ]; then BUILD_NUMBER=0; fi
           SAFE_VERSION="${VERSION//+/-}"
           TAG="v${SAFE_VERSION}-build-${{ github.event.workflow_run.run_number }}"
 
           {
             echo "version=$VERSION"
+            echo "app_version=$APP_VERSION"
+            echo "build_number=$BUILD_NUMBER"
             echo "tag=$TAG"
-            echo "apk_path=$APK_PATH"
           } >> "$GITHUB_OUTPUT"
 
           echo "Publishing $TAG from build #${{ github.event.workflow_run.run_number }}"
-          echo "APK: $APK_PATH"
-          ls -lh "$APK_PATH"
+          ls -lh release-assets/app-release.apk
 
       - name: Publish APK release
         if: steps.current.outputs.publish == 'true'
@@ -91,9 +98,41 @@ jobs:
           target_commitish: ${{ github.event.workflow_run.head_sha }}
           name: SAKINA ${{ steps.meta.outputs.version }} (Build #${{ github.event.workflow_run.run_number }})
           body: |
-            نسخة SAKINA المبنية بنجاح من GitHub Actions.
+            نسخة سَكِينَة المبنية بنجاح من GitHub Actions.
             Build: #${{ github.event.workflow_run.run_number }}
             Commit: ${{ github.event.workflow_run.head_sha }}
-          files: ${{ steps.meta.outputs.apk_path }}
+          files: release-assets/app-release.apk
           fail_on_unmatched_files: true
-          make_latest: true
+          overwrite_files: true
+          prerelease: true
+          make_latest: false
+
+      - name: Update public update manifest on main
+        if: steps.current.outputs.publish == 'true'
+        env:
+          LATEST_VERSION: ${{ steps.meta.outputs.app_version }}
+          BUILD_NUMBER: ${{ steps.meta.outputs.build_number }}
+          RELEASE_TAG: ${{ steps.meta.outputs.tag }}
+          REPOSITORY: ${{ github.repository }}
+          RELEASE_NOTES: "احفظ بياناتك وسجّل الدخول بنفس الحساب بعد التثبيت لاستعادتها. إذا طلب Android إزالة النسخة القديمة، تأكد من اكتمال تنزيل النسخة الجديدة أولًا."
+        run: |
+          set -euo pipefail
+          git fetch origin +refs/heads/main:refs/remotes/origin/main
+          git checkout -B update-manifest origin/main
+          APK_URL="https://github.com/${REPOSITORY}/releases/download/${RELEASE_TAG}/app-release.apk"
+          jq -n \
+            --arg version "$LATEST_VERSION" \
+            --arg build "$BUILD_NUMBER" \
+            --arg url "$APK_URL" \
+            --arg notes "$RELEASE_NOTES" \
+            '{latestVersion:$version, latestBuild:($build|tonumber), latestBuildNumber:($build|tonumber), apkUrl:$url, minimumVersion:"", minimumBuildNumber:0, notes:$notes, showUpdate:true, autoCheck:true, mandatory:false, publishedAt:(now|todate)}' \
+            > update.json
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add update.json
+          if git diff --cached --quiet; then
+            echo "Update manifest already current."
+            exit 0
+          fi
+          git commit -m "Publish SAKINA update manifest for ${RELEASE_TAG}"
+          git push origin HEAD:main
