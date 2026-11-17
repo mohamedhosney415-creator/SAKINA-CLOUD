@@ -136,7 +136,7 @@ class _AdminUpdateManagementPanelState extends State<AdminUpdateManagementPanel>
       }
       final forceUpdate = mandatory ?? (settings['mandatory'] == true);
       if (forceUpdate && _minimum.text.trim().isEmpty) {
-        _minimum.text = version;
+        _minimum.text = version + '+' + build.toString();
       }
       if (!forceUpdate) _minimum.clear();
       final values = <String, dynamic>{
@@ -222,7 +222,7 @@ class _AdminUpdateManagementPanelState extends State<AdminUpdateManagementPanel>
           TextField(
             enabled: settings['mandatory'] == true,
             controller: _minimum,
-            decoration: const InputDecoration(labelText: 'أقل إصدار مسموح به'),
+            decoration: const InputDecoration(labelText: 'أقل إصدار مسموح به (مثال 4.9.2+19)'),
           ),
           TextField(
             controller: _notes,

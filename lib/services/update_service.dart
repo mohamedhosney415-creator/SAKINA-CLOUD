@@ -72,9 +72,13 @@ class UpdateService {
           .timeout(const Duration(seconds: 8));
       if (response.statusCode != 200) return null;
       final data = jsonDecode(response.body) as Map<String, dynamic>;
+      final manifestVersion = (data['latestVersion'] ?? '').toString();
+      final manifestParts = manifestVersion.split('+');
+      final manifestBuild = data['latestBuild']?.toString() ??
+          (manifestParts.length > 1 ? manifestParts.last : '0');
       return SakinaUpdateInfo(
-        latestVersion: (data['latestVersion'] ?? '').toString(),
-        latestBuild: int.tryParse('${data['latestBuild'] ?? 0}') ?? 0,
+        latestVersion: manifestParts.first,
+        latestBuild: int.tryParse(manifestBuild) ?? 0,
         apkUrl: (data['apkUrl'] ?? '').toString(),
         minimumVersion: data['minimumVersion']?.toString(),
         notes: data['notes']?.toString(),

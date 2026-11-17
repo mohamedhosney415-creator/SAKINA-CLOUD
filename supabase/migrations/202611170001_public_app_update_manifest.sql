@@ -8,14 +8,14 @@ as $function$
   select jsonb_build_object(
     'latestVersion',
       case
-        when mandatory or (show_update and auto_check) then latest_version
+        when mandatory or (show_update and auto_check) then latest_version || '+' || latest_build::text
         else ''
       end,
     'latestBuild', latest_build,
     'apkUrl', apk_url,
     'minimumVersion',
       case
-        when mandatory then coalesce(nullif(minimum_version, ''), latest_version)
+        when mandatory then coalesce(nullif(minimum_version, ''), latest_version || '+' || latest_build::text)
         else ''
       end,
     'notes', notes,
