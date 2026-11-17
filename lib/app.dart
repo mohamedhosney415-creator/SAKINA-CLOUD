@@ -73,6 +73,10 @@ class _SakinaAppState extends State<SakinaApp> with WidgetsBindingObserver {
     if (state == AppLifecycleState.resumed) {
       Diag.guard('app-version-register', CloudService.recordAppInstall);
       Diag.guard(
+          'resume-update-check',
+          () => UpdateService.showIfNeeded(
+              sakinaNavigatorKey.currentContext ?? context));
+      Diag.guard(
           'resume-schedule', () => NotificationService.ensureScheduled());
     }
   }
