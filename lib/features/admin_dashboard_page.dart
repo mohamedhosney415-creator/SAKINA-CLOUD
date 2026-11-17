@@ -4,6 +4,7 @@ import '../cloud/cloud_service.dart';
 import '../cloud/game_cloud_service.dart';
 import '../core/theme.dart';
 import '../core/widgets.dart';
+import 'admin_update_management_panel.dart';
 
 class AdminDashboardPage extends StatefulWidget {
   const AdminDashboardPage({super.key});
@@ -177,6 +178,8 @@ class _AdminDashboardPageState extends State<AdminDashboardPage> {
               ),
           ],
         ),
+        const SizedBox(height: 16),
+        const AdminUpdateManagementPanel(),
         const SizedBox(height: 16),
         Panel(
           child: Column(
