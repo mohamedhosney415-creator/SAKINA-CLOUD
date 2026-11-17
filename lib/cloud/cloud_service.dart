@@ -120,7 +120,7 @@ class CloudService {
     final u = user;
     if (u == null || !await isOwner()) throw StateError('Owner access required');
     final rows = await client.from('profiles').select('id').eq('role', 'user');
-    final ids = List<Map<String, dynamic>>.from(rows).map((x) => '\${x['id']}').toList();
+    final ids = List<Map<String, dynamic>>.from(rows).map((x) => x['id'].toString()).toList();
     if (ids.isEmpty) return;
     await client.from('user_messages').insert(ids.map((id) => {'recipient_id': id, 'sender_id': u.id, 'title': title, 'body': body}).toList());
   }
