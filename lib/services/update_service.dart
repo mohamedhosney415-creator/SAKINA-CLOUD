@@ -21,7 +21,7 @@ class UpdateService {
       final r = await http.get(Uri.parse(manifestUrl)).timeout(const Duration(seconds: 8));
       if (r.statusCode != 200) return null;
       final data = jsonDecode(r.body) as Map<String, dynamic>;
-      return SakinaUpdateInfo(latestVersion: '\${data['latestVersion'] ?? ''}', apkUrl: '\${data['apkUrl'] ?? ''}', minimumVersion: data['minimumVersion']?.toString(), notes: data['notes']?.toString());
+      return SakinaUpdateInfo(latestVersion: (data['latestVersion'] ?? '').toString(), apkUrl: (data['apkUrl'] ?? '').toString(), minimumVersion: data['minimumVersion']?.toString(), notes: data['notes']?.toString());
     } catch (_) { return null; }
   }
   static Future<bool> shouldUpdate(SakinaUpdateInfo info) async { final p = await PackageInfo.fromPlatform(); return _compare(p.version, info.latestVersion) < 0; }
@@ -39,7 +39,7 @@ class UpdateService {
     final mandatory = await isMandatory(info);
     await showDialog<void>(context: context, barrierDismissible: !mandatory, builder: (_) => AlertDialog(
       title: const Text('تحديث جديد لـ SAKINA'),
-      content: Text(['الإصدار الجديد: \${info.latestVersion}', if ((info.notes ?? '').trim().isNotEmpty) '', if ((info.notes ?? '').trim().isNotEmpty) info.notes!, if (mandatory) '', if (mandatory) 'هذا التحديث مطلوب للاستمرار.'].join('\n')),
+      content: Text(['الإصدار الجديد: ${info.latestVersion}', if ((info.notes ?? '').trim().isNotEmpty) '', if ((info.notes ?? '').trim().isNotEmpty) info.notes!, if (mandatory) '', if (mandatory) 'هذا التحديث مطلوب للاستمرار.'].join('\n')),
       actions: [if (!mandatory) TextButton(onPressed: () => Navigator.pop(context), child: const Text('لاحقًا')), FilledButton(onPressed: () async { final ok = await launchUrl(Uri.parse(info.apkUrl), mode: LaunchMode.externalApplication); if (context.mounted && !ok) ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('تعذر فتح رابط التحديث.'))); }, child: const Text('تحديث الآن'))],
     ));
   }
