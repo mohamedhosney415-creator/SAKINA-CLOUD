@@ -1122,7 +1122,6 @@ class _QuranGameQuizPageState extends State<QuranGameQuizPage> {
       choices = null;
       hasSecondChance = false;
     });
-    _loadAdjacentAyahs();
   }
 
   Future<void> _hint() async {
