@@ -31,6 +31,32 @@ jobs:
       - name: Generate Android project
         run: flutter create --org com.hosny --project-name sakina --platforms=android .
 
+      - name: Prepare fixed SAKINA release signing
+        env:
+          SAKINA_KEYSTORE_BASE64: ${{ secrets.SAKINA_KEYSTORE_BASE64 }}
+          SAKINA_STORE_PASSWORD: ${{ secrets.SAKINA_STORE_PASSWORD }}
+          SAKINA_KEY_ALIAS: ${{ secrets.SAKINA_KEY_ALIAS }}
+          SAKINA_KEY_PASSWORD: ${{ secrets.SAKINA_KEY_PASSWORD }}
+        run: |
+          set -euo pipefail
+          for name in SAKINA_KEYSTORE_BASE64 SAKINA_STORE_PASSWORD SAKINA_KEY_ALIAS SAKINA_KEY_PASSWORD; do
+            if [ -z "${!name:-}" ]; then
+              echo "::error::Missing required GitHub Actions secret: $name"
+              exit 1
+            fi
+          done
+          mkdir -p android/app
+          printf '%s' "$SAKINA_KEYSTORE_BASE64" | tr -d '\r\n ' | base64 --decode > android/app/sakina-release.jks
+          test -s android/app/sakina-release.jks
+          umask 077
+          cat > android/key.properties <<EOF
+          storePassword=$SAKINA_STORE_PASSWORD
+          keyPassword=$SAKINA_KEY_PASSWORD
+          keyAlias=$SAKINA_KEY_ALIAS
+          storeFile=app/sakina-release.jks
+          EOF
+          chmod 600 android/key.properties android/app/sakina-release.jks
+
       - name: Remove generated starter test only
         run: rm -f test/widget_test.dart
 
