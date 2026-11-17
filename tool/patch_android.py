@@ -200,12 +200,18 @@ def configure_release_signing(path, kotlin_dsl):
     if 'SAKINA_RELEASE_SIGNING' in g:
         print('persistent release signing already configured')
         return
+    if kotlin_dsl:
+        # Kotlin DSL's generated "java" extension shadows the java package name;
+        # use explicit imports so Properties/FileInputStream resolve reliably.
+        imports = 'import java.util.Properties\\nimport java.io.FileInputStream\\n'
+        if 'import java.util.Properties' not in g:
+            g = imports + g
     props = '''
 // SAKINA_RELEASE_SIGNING: load the persistent upload key from android/key.properties
-val sakinaKeystoreProperties = java.util.Properties()
+val sakinaKeystoreProperties = Properties()
 val sakinaKeystorePropertiesFile = rootProject.file("key.properties")
 if (sakinaKeystorePropertiesFile.exists()) {
-    sakinaKeystoreProperties.load(java.io.FileInputStream(sakinaKeystorePropertiesFile))
+    sakinaKeystoreProperties.load(FileInputStream(sakinaKeystorePropertiesFile))
 }
 ''' if kotlin_dsl else '''
 // SAKINA_RELEASE_SIGNING: load the persistent upload key from android/key.properties
