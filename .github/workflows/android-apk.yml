@@ -155,7 +155,7 @@ jobs:
           if-no-files-found: error
 
       - name: Publish stable Release APK downloads
-        if: github.ref == 'refs/heads/main'
+        if: github.ref == 'refs/heads/main' && env.SAKINA_SIGNING_READY == 'true'
         uses: softprops/action-gh-release@v2
         with:
           tag_name: release-latest
