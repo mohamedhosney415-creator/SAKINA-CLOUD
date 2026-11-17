@@ -1,5 +1,6 @@
 import 'dart:convert';
 import 'package:supabase_flutter/supabase_flutter.dart';
+import 'package:url_launcher/url_launcher.dart';
 import '../core/store.dart';
 import 'supabase_config.dart';
 
@@ -34,6 +35,7 @@ class CloudService {
     await client.auth.signInWithOAuth(
       OAuthProvider.google,
       redirectTo: 'com.hosny.sakina://login-callback/',
+      authScreenLaunchMode: LaunchMode.externalApplication,
     );
   }
 
