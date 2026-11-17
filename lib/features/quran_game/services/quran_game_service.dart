@@ -65,10 +65,15 @@ class QuranGameService {
     try {
       final state = await GameCloudService.controlState();
       _gameEnabled = state['game_enabled'] != false;
+      await Store.setFlag('qgame_global_enabled', _gameEnabled);
       final message = state['maintenance_message']?.toString().trim() ?? '';
-      if (message.isNotEmpty) _maintenanceMessage = message;
+      if (message.isNotEmpty) {
+        _maintenanceMessage = message;
+        await Store.setStr('qgame_maintenance_message', message);
+      }
     } catch (_) {
-      // Keep the last known state while offline.
+      _gameEnabled = Store.flag('qgame_global_enabled', true);
+      _maintenanceMessage = Store.str('qgame_maintenance_message', _maintenanceMessage);
     }
   }
 
