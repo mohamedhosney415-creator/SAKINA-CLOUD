@@ -1,4 +1,5 @@
 import 'dart:convert';
+import 'package:android_intent_plus/android_intent.dart';
 import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:http/http.dart' as http;
@@ -152,6 +153,7 @@ class UpdateService {
       builder: (dialogContext) {
         var busy = false;
         var backupDone = false;
+        var downloadOpened = false;
         String? error;
         String? note;
         return StatefulBuilder(
@@ -177,7 +179,7 @@ class UpdateService {
                   ),
                   const SizedBox(height: 8),
                   const Text(
-                    'بعد نجاح المزامنة: احذف النسخة القديمة ثم ثبّت الجديدة، وبعدها سجّل الدخول بنفس الحساب لاستعادة بياناتك.',
+                    'بعد نجاح الحفظ: نزّل ملف النسخة الجديدة أولًا وانتظر اكتمال التنزيل. بعد ذلك ارجع إلى سَكِينَة واضغط حذف النسخة القديمة. سيطلب Android تأكيد الحذف، وبعد إتمامه افتح ملف APK الذي نزّلته وثبّته. سجّل الدخول بنفس الحساب لاستعادة بياناتك.',
                     style: TextStyle(fontWeight: FontWeight.w700, height: 1.6),
                   ),
                   if (mandatory) ...[
@@ -191,6 +193,13 @@ class UpdateService {
                           ? 'تم حفظ النسخة الاحتياطية والتحقق منها. بياناتك السحابية جاهزة للاستعادة بعد التثبيت.'
                           : 'تم تصدير الملف. احتفظ به، ثم استعده يدويًا بعد تثبيت النسخة الجديدة.',
                       style: const TextStyle(color: Colors.green, fontWeight: FontWeight.w700),
+                    ),
+                  ],
+                  if (downloadOpened) ...[
+                    const SizedBox(height: 8),
+                    const Text(
+                      'تم فتح رابط التنزيل. انتظر حتى يكتمل تنزيل ملف APK، ثم ارجع هنا واضغط «حذف النسخة القديمة». بعد الحذف افتح الملف من التنزيلات.',
+                      style: TextStyle(color: Colors.green, fontWeight: FontWeight.w700, height: 1.5),
                     ),
                   ],
                   if (note != null) ...[
@@ -247,7 +256,7 @@ class UpdateService {
                     },
                     child: const Text('تصدير نسخة احتياطية'),
                   ),
-                if (CloudService.signedIn || !CloudService.enabled)
+                if ((CloudService.signedIn || !CloudService.enabled) && !downloadOpened)
                   FilledButton(
                     onPressed: busy ? null : () async {
                       if (!backupDone) {
@@ -256,10 +265,9 @@ class UpdateService {
                           if (CloudService.enabled) {
                             await CloudService.prepareUpdateBackup();
                           } else {
-                            // A manual export must be completed before proceeding without cloud.
                             setDialogState(() {
                               busy = false;
-                              error = 'صدّر النسخة الاحتياطية أولًا ثم اضغط متابعة التحديث.';
+                              error = 'صدّر النسخة الاحتياطية واحتفظ بالملف أولًا، ثم اضغط متابعة التحديث.';
                             });
                             return;
                           }
@@ -278,17 +286,60 @@ class UpdateService {
                           return;
                         }
                       }
+                      if (!backupDone) return;
                       final opened = await launchUrl(
                         uri,
                         mode: LaunchMode.externalApplication,
                       );
-                      if (!opened && dialogContext.mounted) {
-                        setDialogState(() => error = backupDone
-                            ? 'تم حفظ بياناتك، لكن تعذر فتح رابط التحديث.'
-                            : 'تعذر فتح رابط التحديث.');
+                      if (dialogContext.mounted) {
+                        setDialogState(() {
+                          if (opened) {
+                            downloadOpened = true;
+                            error = null;
+                          } else {
+                            error = 'تم حفظ بياناتك، لكن تعذر فتح رابط تنزيل النسخة الجديدة.';
+                          }
+                        });
                       }
                     },
-                    child: Text(backupDone ? 'فتح رابط التحديث' : (CloudService.enabled ? 'تحديث الآن مع مزامنة تلقائية' : 'متابعة إلى تنزيل التحديث')),
+                    child: Text(backupDone ? 'تنزيل النسخة الجديدة أولًا' : (CloudService.enabled ? 'حفظ بياناتي ثم متابعة' : 'تصدير النسخة الاحتياطية')),
+                  ),
+                if (backupDone && downloadOpened)
+                  FilledButton.tonal(
+                    onPressed: busy ? null : () async {
+                      final confirmed = await showDialog<bool>(
+                        context: dialogContext,
+                        builder: (confirmContext) => AlertDialog(
+                          title: const Text('حذف النسخة القديمة'),
+                          content: const Text(
+                            'تأكد أن تنزيل ملف APK الجديد اكتمل وظهر في التنزيلات. بعد حذف سَكِينَة القديمة لن يمكن الرجوع إليها دون إعادة تثبيتها. هل تريد فتح شاشة إزالة التطبيق الآن؟',
+                          ),
+                          actions: [
+                            TextButton(
+                              onPressed: () => Navigator.pop(confirmContext, false),
+                              child: const Text('إلغاء'),
+                            ),
+                            FilledButton(
+                              onPressed: () => Navigator.pop(confirmContext, true),
+                              child: const Text('نعم، متابعة الحذف'),
+                            ),
+                          ],
+                        ),
+                      );
+                      if (confirmed != true || !dialogContext.mounted) return;
+                      try {
+                        const intent = AndroidIntent(
+                          action: 'android.intent.action.DELETE',
+                          data: 'package:com.hosny.sakina',
+                        );
+                        await intent.launch();
+                      } catch (e) {
+                        if (dialogContext.mounted) {
+                          setDialogState(() => error = 'تعذر فتح شاشة إزالة التطبيق. احذف النسخة القديمة من إعدادات Android بعد التأكد من اكتمال التنزيل. (${e.toString()})');
+                        }
+                      }
+                    },
+                    child: const Text('حذف النسخة القديمة الآن'),
                   ),
               ],
             ),
