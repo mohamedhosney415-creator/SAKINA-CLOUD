@@ -1268,7 +1268,6 @@ class _QuranGameQuizPageState extends State<QuranGameQuizPage> {
                       textAlign: TextAlign.center,
                       textDirection: TextDirection.rtl,
                     ),
-                    ),
                   ),
                 ] else ...[
                   Container(
