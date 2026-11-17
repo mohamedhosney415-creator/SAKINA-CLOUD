@@ -1002,7 +1002,7 @@ class _QuranGameQuizPageState extends State<QuranGameQuizPage> {
     final start = max(0, index - 5);
     final end = min(words.length - 1, index + 5);
     final visible = words.sublist(start, end + 1);
-    final revealWord = correct == true || (answered && correct == false && !hasSecondChance);
+    final revealWord = correct == true || (correct == false && !hasSecondChance);
     if (!revealWord) visible[index - start] = 'ــــــــ';
     return visible.join(' ');
   }
