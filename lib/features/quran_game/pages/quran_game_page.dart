@@ -995,12 +995,28 @@ class _QuranGameQuizPageState extends State<QuranGameQuizPage> {
 
   TextSpan _quranText(String text, double size, Color color) {
     final spans = <TextSpan>[];
-    final marks = RegExp('[\\u064B-\\u065F\\u0670\\u06D6-\\u06ED]');
+    // إبراز التشكيل وعلامات الضبط القرآني بالأحمر مع إبقاء الحروف بيضاء.
+    final marks = RegExp('[\\u064B-\\u065F\\u0670\\u06D6-\\u06ED\\u08D3-\\u08FF]');
     for (final rune in text.runes) {
       final ch = String.fromCharCode(rune);
-      spans.add(TextSpan(text: ch, style: TextStyle(color: marks.hasMatch(ch) ? Colors.red : color)));
+      spans.add(
+        TextSpan(
+          text: ch,
+          style: TextStyle(
+            color: marks.hasMatch(ch) ? const Color(0xFFFF5555) : color,
+          ),
+        ),
+      );
     }
-    return TextSpan(children: spans, style: GoogleFonts.amiri(fontSize: size, height: 1.95, fontWeight: FontWeight.w700, color: color));
+    return TextSpan(
+      children: spans,
+      style: GoogleFonts.amiri(
+        fontSize: size,
+        height: 2.05,
+        fontWeight: FontWeight.w700,
+        color: color,
+      ),
+    );
   }
 
   @override
@@ -1215,23 +1231,80 @@ class _QuranGameQuizPageState extends State<QuranGameQuizPage> {
                 ),
                 const SizedBox(height: 18),
                 if (q.isQuran) ...[
-                  if (previousAyah != null) ...[
-                    Text('الآية السابقة', style: TextStyle(color: Theme.of(context).colorScheme.onSurface.withAlpha(110), fontSize: 10, fontWeight: FontWeight.w800)),
-                    const SizedBox(height: 4),
-                    Text.rich(_quranText(previousAyah!, 17, Colors.white70), textAlign: TextAlign.center, textDirection: TextDirection.rtl),
-                    const SizedBox(height: 14),
-                  ],
-                  Text.rich(
-                    _quranText(answered || !q.isCompleteWord ? q.fullAyah : q.maskedAyah, 29, Colors.white),
-                    textAlign: TextAlign.center,
-                    textDirection: TextDirection.rtl,
+                  Container(
+                    width: double.infinity,
+                    padding: const EdgeInsets.symmetric(
+                      horizontal: 18,
+                      vertical: 22,
+                    ),
+                    decoration: BoxDecoration(
+                      color: const Color(0xFF102B29),
+                      borderRadius: BorderRadius.circular(20),
+                      border: Border.all(color: const Color(0xFF376B60)),
+                      boxShadow: const [
+                        BoxShadow(
+                          color: Color(0x22000000),
+                          blurRadius: 14,
+                          offset: Offset(0, 5),
+                        ),
+                      ],
+                    ),
+                    child: Column(
+                      children: [
+                        if (previousAyah != null) ...[
+                          const Text(
+                            'الآية السابقة',
+                            style: TextStyle(
+                              color: Colors.white70,
+                              fontSize: 11,
+                              fontWeight: FontWeight.w800,
+                            ),
+                          ),
+                          const SizedBox(height: 7),
+                          Text.rich(
+                            _quranText(previousAyah!, 19, Colors.white),
+                            textAlign: TextAlign.center,
+                            textDirection: TextDirection.rtl,
+                          ),
+                          const Padding(
+                            padding: EdgeInsets.symmetric(vertical: 15),
+                            child: Divider(color: Color(0x5578A99B), height: 1),
+                          ),
+                        ],
+                        Text.rich(
+                          _quranText(
+                            answered || !q.isCompleteWord
+                                ? q.fullAyah
+                                : q.maskedAyah,
+                            30,
+                            Colors.white,
+                          ),
+                          textAlign: TextAlign.center,
+                          textDirection: TextDirection.rtl,
+                        ),
+                        if (nextAyah != null) ...[
+                          const Padding(
+                            padding: EdgeInsets.symmetric(vertical: 15),
+                            child: Divider(color: Color(0x5578A99B), height: 1),
+                          ),
+                          const Text(
+                            'الآية التالية',
+                            style: TextStyle(
+                              color: Colors.white70,
+                              fontSize: 11,
+                              fontWeight: FontWeight.w800,
+                            ),
+                          ),
+                          const SizedBox(height: 7),
+                          Text.rich(
+                            _quranText(nextAyah!, 19, Colors.white),
+                            textAlign: TextAlign.center,
+                            textDirection: TextDirection.rtl,
+                          ),
+                        ],
+                      ],
+                    ),
                   ),
-                  if (nextAyah != null) ...[
-                    const SizedBox(height: 14),
-                    Text('الآية التالية', style: TextStyle(color: Theme.of(context).colorScheme.onSurface.withAlpha(110), fontSize: 10, fontWeight: FontWeight.w800)),
-                    const SizedBox(height: 4),
-                    Text.rich(_quranText(nextAyah!, 17, Colors.white70), textAlign: TextAlign.center, textDirection: TextDirection.rtl),
-                  ],
                 ] else ...[
                   Container(
                     width: double.infinity,
