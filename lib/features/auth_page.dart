@@ -52,17 +52,18 @@ class _AuthPageState extends State<AuthPage> {
     }
   }
 
-  Future<void> signInGoogle() async {
+  Future<void> signInGuest() async {
     setState(() { loading = true; error = null; });
     try {
-      await CloudService.signInWithGoogle();
+      await CloudService.signInAsGuest();
+      await _completeLogin();
     } on AuthException catch (e) {
       if (mounted) {
-        setState(() => error = 'فشل تسجيل Google: ${e.message}');
+        setState(() => error = 'تعذر الدخول كضيف: ${e.message}');
       }
     } catch (e) {
       if (mounted) {
-        setState(() => error = 'تعذر بدء تسجيل Google: ${e.toString()}');
+        setState(() => error = 'تعذر الدخول كضيف: ${e.toString()}');
       }
     } finally {
       if (mounted) setState(() => loading = false);
@@ -238,9 +239,9 @@ class _AuthPageState extends State<AuthPage> {
                     SizedBox(
                       width: double.infinity,
                       child: OutlinedButton.icon(
-                        onPressed: loading ? null : signInGoogle,
-                        icon: const Icon(Icons.g_mobiledata_rounded, size: 28),
-                        label: const Text('المتابعة باستخدام Google'),
+                        onPressed: loading ? null : signInGuest,
+                        icon: const Icon(Icons.person_outline_rounded),
+                        label: const Text('الدخول كضيف'),
                       ),
                     ),
                   ],

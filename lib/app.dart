@@ -11,6 +11,7 @@ import 'features/azkar_page.dart';
 import 'features/diagnostics_page.dart';
 import 'features/home_page.dart';
 import 'features/more_page.dart';
+import 'features/messages_page.dart';
 import 'features/prayer_page.dart';
 import 'features/quran_page.dart';
 import 'features/quran_game/pages/quran_game_page.dart';
@@ -136,6 +137,56 @@ class Shell extends StatefulWidget {
 class _ShellState extends State<Shell> {
   int index = 0;
   bool onboardingDone = Store.flag('onboardingComplete');
+  late Future<Map<String, dynamic>?> _announcementFuture;
+
+  @override
+  void initState() {
+    super.initState();
+    _announcementFuture = CloudService.latestMessage();
+  }
+
+  Future<void> _openAnnouncement(Map<String, dynamic> message) async {
+    final id = message['id']?.toString();
+    if (id != null) await CloudService.markMessageRead(id);
+    if (!mounted) return;
+    await Navigator.of(context).push(
+      MaterialPageRoute(builder: (_) => const MessagesPage()),
+    );
+    if (mounted) setState(() => _announcementFuture = CloudService.latestMessage());
+  }
+
+  Widget _announcementBanner(Map<String, dynamic> message) {
+    final cs = Theme.of(context).colorScheme;
+    final title = '${message['title'] ?? 'إعلان من سَكِينَة'}'.trim();
+    final body = '${message['body'] ?? ''}'.trim();
+    return Material(
+      color: Color.alphaBlend(cs.primary.withAlpha(22), cs.surface),
+      child: InkWell(
+        onTap: () => _openAnnouncement(message),
+        child: Padding(
+          padding: const EdgeInsets.fromLTRB(14, 10, 14, 10),
+          child: Row(children: [
+            Icon(Icons.campaign_rounded, color: cs.primary, size: 22),
+            const SizedBox(width: 9),
+            Expanded(
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Text(title, maxLines: 1, overflow: TextOverflow.ellipsis,
+                      style: const TextStyle(fontWeight: FontWeight.w900)),
+                  if (body.isNotEmpty)
+                    Text(body, maxLines: 2, overflow: TextOverflow.ellipsis,
+                        style: TextStyle(fontSize: 12.5, color: cs.onSurface.withAlpha(180))),
+                ],
+              ),
+            ),
+            const SizedBox(width: 8),
+            Icon(Icons.chevron_left_rounded, color: cs.primary),
+          ]),
+        ),
+      ),
+    );
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -189,6 +240,15 @@ class _ShellState extends State<Shell> {
                   );
                 },
               );
+            },
+          ),
+          FutureBuilder<Map<String, dynamic>?>(
+            future: _announcementFuture,
+            builder: (context, announcement) {
+              final message = announcement.data;
+              return message == null
+                  ? const SizedBox.shrink()
+                  : _announcementBanner(message);
             },
           ),
           Expanded(child: IndexedStack(index: index, children: pages)),

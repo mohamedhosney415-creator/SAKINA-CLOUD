@@ -466,7 +466,7 @@ class _AdminDashboardPageState extends State<AdminDashboardPage> {
     if (ok == true && body.text.trim().isNotEmpty) {
       try {
         await CloudService.broadcastMessage(title: title.text.trim(), body: body.text.trim());
-        if (mounted) ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('تم حفظ الإعلان في رسائل المستخدمين.')));
+        if (mounted) ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('تم إرسال الإعلان وسيظهر كشعار للمستخدمين.')));
       } catch (_) {
         if (mounted) ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('تعذر إرسال الإعلان.')));
       }

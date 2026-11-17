@@ -1,6 +1,5 @@
 import 'dart:convert';
 import 'package:supabase_flutter/supabase_flutter.dart';
-import 'package:url_launcher/url_launcher.dart';
 import '../core/store.dart';
 import 'supabase_config.dart';
 
@@ -31,12 +30,8 @@ class CloudService {
     return r;
   }
 
-  static Future<void> signInWithGoogle() async {
-    await client.auth.signInWithOAuth(
-      OAuthProvider.google,
-      redirectTo: 'com.hosny.sakina://login-callback/',
-      authScreenLaunchMode: LaunchMode.externalApplication,
-    );
+  static Future<AuthResponse> signInAsGuest() async {
+    return client.auth.signInAnonymously();
   }
 
   static Future<void> signOut() => client.auth.signOut();
@@ -137,6 +132,19 @@ class CloudService {
     if (u == null) return const [];
     final rows = await client.from('user_messages').select('id,title,body,created_at,read_at').eq('recipient_id', u.id).order('created_at', ascending: false);
     return List<Map<String, dynamic>>.from(rows);
+  }
+
+  static Future<Map<String, dynamic>?> latestMessage() async {
+    final u = user;
+    if (u == null) return null;
+    final rows = await client
+        .from('user_messages')
+        .select('id,title,body,created_at,read_at')
+        .eq('recipient_id', u.id)
+        .order('created_at', ascending: false)
+        .limit(1);
+    if (rows.isEmpty) return null;
+    return Map<String, dynamic>.from(rows.first);
   }
   static Future<void> markMessageRead(String messageId) async {
     final u = user;
