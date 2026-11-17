@@ -986,7 +986,7 @@ class _QuranGameQuizPageState extends State<QuranGameQuizPage> {
       .trim();
 
   String _wordWindow() {
-    final words = q.fullAyah.trim().split(RegExp(r'\\s+'));
+    final words = q.fullAyah.trim().split(RegExp(r'\s+'));
     if (words.isEmpty || words.first.isEmpty) return q.fullAyah;
     final hidden = _normalizedArabicWord(q.hiddenWord);
     var index = words.indexWhere((word) {
@@ -994,7 +994,7 @@ class _QuranGameQuizPageState extends State<QuranGameQuizPage> {
       return candidate == hidden || candidate.contains(hidden);
     });
     if (index < 0) {
-      final maskedWords = q.maskedAyah.trim().split(RegExp(r'\\s+'));
+      final maskedWords = q.maskedAyah.trim().split(RegExp(r'\s+'));
       index = maskedWords.indexWhere((word) => word.contains('ــــ'));
     }
     if (index < 0) return words.take(11).join(' ');
