@@ -65,9 +65,9 @@ jobs:
           else
             echo "SAKINA_SIGNING_READY=false" >> "$GITHUB_ENV"
             echo "::warning::No persistent release keystore configured. Creating an ephemeral test keystore for branch validation only."
-            keytool -genkeypair -v -keystore android/branch-test.keystore \\
-              -storepass branch-test-storepass -keypass branch-test-keypass \\
-              -alias sakina-branch-test -keyalg RSA -keysize 2048 -validity 3650 \\
+            keytool -genkeypair -v -keystore android/branch-test.keystore \
+              -storepass branch-test-storepass -keypass branch-test-keypass \
+              -alias sakina-branch-test -keyalg RSA -keysize 2048 -validity 3650 \
               -dname "CN=SAKINA Branch Test, OU=Development, O=SAKINA, C=EG"
             cat > android/key.properties <<EOF
           storeFile=../branch-test.keystore
