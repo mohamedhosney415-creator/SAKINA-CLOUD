@@ -215,11 +215,11 @@ if (sakinaKeystorePropertiesFile.exists()) {
     sakinaKeystoreProperties.load(new FileInputStream(sakinaKeystorePropertiesFile))
 }
 '''
-    android_open = re.search(r'^android\\s*\\{', g, re.M)
+    android_open = re.search(r'^android\s*\{', g, re.M)
     if not android_open:
         fail('تعذر العثور على android block لإعداد توقيع الإصدار')
-    g = g[:android_open.start()] + props + '\\n' + g[android_open.start():]
-    android_open = re.search(r'^android\\s*\\{', g, re.M)
+    g = g[:android_open.start()] + props + '\n' + g[android_open.start():]
+    android_open = re.search(r'^android\s*\{', g, re.M)
     if kotlin_dsl:
         signing = '''
     signingConfigs {
@@ -237,7 +237,7 @@ if (sakinaKeystorePropertiesFile.exists()) {
 '''
         g = g[:android_open.end()] + signing + g[android_open.end():]
         g, n = re.subn(
-            r'signingConfig\\s*=\\s*signingConfigs\\.getByName\\(["\\']debug["\\']\\)',
+            r"signingConfig\s*=\s*signingConfigs\.getByName\(['\"]debug['\"]\)",
             'signingConfig = signingConfigs.getByName("sakinaRelease")', g, count=1)
     else:
         signing = '''
@@ -256,7 +256,7 @@ if (sakinaKeystorePropertiesFile.exists()) {
 '''
         g = g[:android_open.end()] + signing + g[android_open.end():]
         g, n = re.subn(
-            r'signingConfig\\s*=\\s*signingConfigs\\.debug',
+            r"signingConfig\s*=\s*signingConfigs\.debug",
             'signingConfig signingConfigs.sakinaRelease', g, count=1)
     if n == 0:
         fail('تعذر ربط buildTypes.release بمفتاح SAKINA الثابت')
