@@ -1,4 +1,6 @@
 import 'dart:convert';
+import 'package:flutter/foundation.dart';
+import 'package:package_info_plus/package_info_plus.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
 import '../core/store.dart';
 import 'supabase_config.dart';
@@ -97,11 +99,44 @@ class CloudService {
   }
 
   static Future<List<Map<String, dynamic>>> adminUsers() async {
-    final rows = await client
-        .from('profiles')
-        .select('id,email,display_name,role,created_at,last_seen_at')
-        .order('created_at', ascending: false);
-    return List<Map<String, dynamic>>.from(rows);
+    final results = await Future.wait([
+      client
+          .from('profiles')
+          .select('id,email,display_name,role,created_at,last_seen_at')
+          .order('created_at', ascending: false),
+      client
+          .from('app_installs')
+          .select('user_id,app_version,build_number,platform,last_seen_at'),
+    ]);
+    final installs = List<Map<String, dynamic>>.from(results[1] as List);
+    final byUserId = {
+      for (final install in installs) install['user_id'].toString(): install,
+    };
+    return List<Map<String, dynamic>>.from(results[0] as List).map((profile) {
+      final install = byUserId[profile['id'].toString()];
+      return {
+        ...profile,
+        'app_version': install?['app_version'],
+        'build_number': install?['build_number'],
+        'platform': install?['platform'],
+        'app_last_seen_at': install?['last_seen_at'],
+      };
+    }).toList();
+  }
+
+  /// Records the version/build number currently running on this signed-in device.
+  /// The database policy limits writes to the authenticated user's own row.
+  static Future<void> recordAppInstall() async {
+    final currentUser = user;
+    if (currentUser == null) return;
+    final package = await PackageInfo.fromPlatform();
+    await client.from('app_installs').upsert({
+      'user_id': currentUser.id,
+      'app_version': package.version,
+      'build_number': int.tryParse(package.buildNumber) ?? 0,
+      'platform': kIsWeb ? 'web' : defaultTargetPlatform.name,
+      'last_seen_at': DateTime.now().toUtc().toIso8601String(),
+    }, onConflict: 'user_id');
   }
 
   static Future<List<Map<String, dynamic>>> myMessages() async {
