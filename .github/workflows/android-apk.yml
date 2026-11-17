@@ -5,6 +5,9 @@ on:
     branches: [main, master, sakina-4-ui-streak, feature/sakina-5-upgrade]
   workflow_dispatch:
 
+permissions:
+  contents: write
+
 jobs:
   build:
     runs-on: ubuntu-latest
@@ -68,6 +71,18 @@ jobs:
         with:
           name: SAKINA-debug-apk
           path: build/app/outputs/flutter-apk/app-debug.apk
+
+      - name: Publish stable Debug APK download
+        uses: softprops/action-gh-release@v2
+        with:
+          tag_name: debug-latest
+          name: SAKINA Debug APK
+          prerelease: true
+          make_latest: false
+          overwrite_files: true
+          files: build/app/outputs/flutter-apk/app-debug.apk
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
 
   # يشغّل التطبيق على محاكي أندرويد ويصوّر الشاشة ويجمع سجل الأعطال.
   # لو التطبيق يغلق عندك: افتح هذه الخطوة ← حمّل Artifact اسمه smoke-test-output.
