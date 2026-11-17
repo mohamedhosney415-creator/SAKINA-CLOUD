@@ -30,6 +30,13 @@ class CloudService {
     return r;
   }
 
+  static Future<void> signInWithGoogle() async {
+    await client.auth.signInWithOAuth(
+      OAuthProvider.google,
+      redirectTo: 'com.hosny.sakina://login-callback/',
+    );
+  }
+
   static Future<void> signOut() => client.auth.signOut();
 
   static Future<bool> pushLocalData({bool allowOverwrite = false}) async {
@@ -110,6 +117,14 @@ class CloudService {
     final rows = await client.from('user_messages').select('id,title,body,created_at,read_at').eq('recipient_id', u.id).order('created_at', ascending: false);
     return List<Map<String, dynamic>>.from(rows);
   }
+  static Future<void> markMessageRead(String messageId) async {
+    final u = user;
+    if (u == null) return;
+    await client.from('user_messages').update({
+      'read_at': DateTime.now().toUtc().toIso8601String(),
+    }).eq('id', messageId).eq('recipient_id', u.id);
+  }
+
   static Future<void> sendMessage({required String recipientId, required String title, required String body}) async {
     final u = user;
     if (u == null || !await isOwner()) throw StateError('Owner access required');
