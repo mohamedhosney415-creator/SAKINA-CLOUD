@@ -6,6 +6,8 @@ import 'package:package_info_plus/package_info_plus.dart';
 import 'package:url_launcher/url_launcher.dart';
 
 import '../cloud/cloud_service.dart';
+import '../services/backup_service.dart';
+import '../features/auth_page.dart';
 
 class SakinaUpdateInfo {
   final String latestVersion;
@@ -147,40 +149,141 @@ class UpdateService {
     await showDialog<void>(
       context: context,
       barrierDismissible: !mandatory,
-      builder: (dialogContext) => PopScope(
-        canPop: !mandatory,
-        child: AlertDialog(
-          title: const Text('تحديث جديد لسَكِينَة'),
-          content: Text([
-            'الإصدار الجديد: ${info.latestVersion}+${info.latestBuild}',
-            if ((info.notes ?? '').trim().isNotEmpty) '',
-            if ((info.notes ?? '').trim().isNotEmpty) info.notes!,
-            if (mandatory) '',
-            if (mandatory) 'هذا التحديث إجباري للاستمرار في استخدام التطبيق.',
-          ].join('\n')),
-          actions: [
-            if (!mandatory)
-              TextButton(
-                onPressed: () => Navigator.pop(dialogContext),
-                child: const Text('لاحقًا'),
+      builder: (dialogContext) {
+        var busy = false;
+        var backupDone = false;
+        String? error;
+        return StatefulBuilder(
+          builder: (dialogContext, setDialogState) => PopScope(
+            canPop: !mandatory,
+            child: AlertDialog(
+              title: const Text('تحديث جديد لسَكِينَة'),
+              content: Column(
+                mainAxisSize: MainAxisSize.min,
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Text('الإصدار الجديد: ${info.latestVersion}+${info.latestBuild}'),
+                  if ((info.notes ?? '').trim().isNotEmpty) ...[
+                    const SizedBox(height: 8),
+                    Text(info.notes!),
+                  ],
+                  const SizedBox(height: 12),
+                  const Text(
+                    'لحماية بياناتك: سنحفظ نسخة من بيانات جهازك ونسخة من بيانات السحابة قبل اعتماد المزامنة. لن نتابع إذا لم نتأكد من نجاح الحفظ.',
+                    style: TextStyle(height: 1.6),
+                  ),
+                  const SizedBox(height: 8),
+                  const Text(
+                    'بعد نجاح المزامنة: احذف النسخة القديمة ثم ثبّت الجديدة، وبعدها سجّل الدخول بنفس الحساب لاستعادة بياناتك.',
+                    style: TextStyle(fontWeight: FontWeight.w700, height: 1.6),
+                  ),
+                  if (mandatory) ...[
+                    const SizedBox(height: 8),
+                    const Text('هذا التحديث إجباري للاستمرار في استخدام التطبيق.'),
+                  ],
+                  if (backupDone) ...[
+                    const SizedBox(height: 10),
+                    const Text(
+                      'تم حفظ النسخة الاحتياطية والتحقق منها. بياناتك السحابية جاهزة للاستعادة بعد التثبيت.',
+                      style: TextStyle(color: Colors.green, fontWeight: FontWeight.w700),
+                    ),
+                  ],
+                  if (error != null) ...[
+                    const SizedBox(height: 10),
+                    Text(error!, style: TextStyle(color: Theme.of(dialogContext).colorScheme.error)),
+                  ],
+                  if (busy) ...[
+                    const SizedBox(height: 14),
+                    const LinearProgressIndicator(),
+                    const SizedBox(height: 6),
+                    const Text('جارٍ حفظ البيانات والتحقق منها...'),
+                  ],
+                ],
               ),
-            FilledButton(
-              onPressed: () async {
-                final opened = await launchUrl(
-                  uri,
-                  mode: LaunchMode.externalApplication,
-                );
-                if (!opened && context.mounted) {
-                  ScaffoldMessenger.of(context).showSnackBar(
-                    const SnackBar(content: Text('تعذر فتح رابط التحديث.')),
-                  );
-                }
-              },
-              child: const Text('تحديث الآن'),
+              actions: [
+                if (!mandatory)
+                  TextButton(
+                    onPressed: busy ? null : () => Navigator.pop(dialogContext),
+                    child: const Text('لاحقًا'),
+                  ),
+                if (CloudService.enabled && !CloudService.signedIn)
+                  FilledButton(
+                    onPressed: busy ? null : () {
+                      Navigator.pop(dialogContext);
+                      Navigator.of(context).push(
+                        MaterialPageRoute(builder: (_) => const AuthPage()),
+                      );
+                    },
+                    child: const Text('تسجيل الدخول أولًا'),
+                  )
+                else if (!CloudService.enabled)
+                  OutlinedButton(
+                    onPressed: busy ? null : () async {
+                      setDialogState(() { busy = true; error = null; });
+                      try {
+                        await BackupService.share();
+                        if (!dialogContext.mounted) return;
+                        setDialogState(() {
+                          busy = false;
+                          backupDone = true;
+                          error = 'تم تصدير الملف. بعد تثبيت النسخة الجديدة، افتح النسخ الاحتياطي واختر استعادة من ملف.';
+                        });
+                      } catch (_) {
+                        if (!dialogContext.mounted) return;
+                        setDialogState(() {
+                          busy = false;
+                          error = 'تعذر تصدير النسخة الاحتياطية؛ لن نبدأ التحديث حتى تحفظ بياناتك.';
+                        });
+                      }
+                    },
+                    child: const Text('تصدير نسخة احتياطية'),
+                  ),
+                if (CloudService.signedIn || !CloudService.enabled)
+                  FilledButton(
+                    onPressed: busy ? null : () async {
+                      if (!backupDone) {
+                        setDialogState(() { busy = true; error = null; });
+                        try {
+                          if (CloudService.enabled) {
+                            await CloudService.prepareUpdateBackup();
+                          } else {
+                            // A manual export must be completed before proceeding without cloud.
+                            setDialogState(() {
+                              busy = false;
+                              error = 'صدّر النسخة الاحتياطية أولًا ثم اضغط متابعة التحديث.';
+                            });
+                            return;
+                          }
+                          if (!dialogContext.mounted) return;
+                          setDialogState(() {
+                            busy = false;
+                            backupDone = true;
+                            error = null;
+                          });
+                        } catch (e) {
+                          if (!dialogContext.mounted) return;
+                          setDialogState(() {
+                            busy = false;
+                            error = 'فشلت المزامنة أو عملية التحقق. لم يتم بدء التحديث. حاول مرة أخرى. (${e.toString()})';
+                          });
+                        }
+                        return;
+                      }
+                      final opened = await launchUrl(
+                        uri,
+                        mode: LaunchMode.externalApplication,
+                      );
+                      if (!opened && dialogContext.mounted) {
+                        setDialogState(() => error = 'تم حفظ بياناتك، لكن تعذر فتح رابط التحديث.');
+                      }
+                    },
+                    child: Text(backupDone ? 'متابعة إلى تنزيل التحديث' : 'مزامنة آمنة وحفظ بياناتي'),
+                  ),
+              ],
             ),
-          ],
-        ),
-      ),
+          ),
+        );
+      },
     );
   }
 }
