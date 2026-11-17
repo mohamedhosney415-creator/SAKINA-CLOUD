@@ -19,6 +19,8 @@ class _AdminDashboardPageState extends State<AdminDashboardPage> {
   Map<String, dynamic> summary = {};
   List<Map<String, dynamic>> users = [];
   List<Map<String, dynamic>> questions = [];
+  List<Map<String, dynamic>> players = [];
+  Map<String, dynamic> control = {'game_enabled': true, 'maintenance_message': ''};
 
   @override
   void initState() {
@@ -34,12 +36,16 @@ class _AdminDashboardPageState extends State<AdminDashboardPage> {
         GameCloudService.ownerSummary(),
         CloudService.adminUsers(),
         GameCloudService.ownerQuestions(),
+        GameCloudService.ownerPlayers(),
+        GameCloudService.controlState(),
       ]);
       if (!mounted) return;
       setState(() {
         summary = Map<String, dynamic>.from(results[0] as Map);
         users = List<Map<String, dynamic>>.from(results[1] as List);
         questions = List<Map<String, dynamic>>.from(results[2] as List);
+        players = List<Map<String, dynamic>>.from(results[3] as List);
+        control = Map<String, dynamic>.from(results[4] as Map);
         loading = false;
       });
     } catch (_) {
@@ -97,7 +103,7 @@ class _AdminDashboardPageState extends State<AdminDashboardPage> {
       ),
       body: IndexedStack(
         index: tab,
-        children: [_overview(), _users(), _questions()],
+        children: [_overview(), _users(), _questions(), _gameControl()],
       ),
       bottomNavigationBar: NavigationBar(
         selectedIndex: tab,
@@ -105,7 +111,8 @@ class _AdminDashboardPageState extends State<AdminDashboardPage> {
         destinations: const [
           NavigationDestination(icon: Icon(Icons.dashboard_outlined), selectedIcon: Icon(Icons.dashboard_rounded), label: 'الرئيسية'),
           NavigationDestination(icon: Icon(Icons.people_outline_rounded), selectedIcon: Icon(Icons.people_rounded), label: 'المستخدمون'),
-          NavigationDestination(icon: Icon(Icons.quiz_outlined), selectedIcon: Icon(Icons.quiz_rounded), label: 'اللعبة'),
+          NavigationDestination(icon: Icon(Icons.quiz_outlined), selectedIcon: Icon(Icons.quiz_rounded), label: 'الأسئلة'),
+          NavigationDestination(icon: Icon(Icons.tune_rounded), selectedIcon: Icon(Icons.admin_panel_settings_rounded), label: 'تحكم اللعبة'),
         ],
       ),
     );
@@ -179,6 +186,12 @@ class _AdminDashboardPageState extends State<AdminDashboardPage> {
           ],
         ),
         const SizedBox(height: 16),
+        FilledButton.icon(
+          onPressed: _broadcastMessage,
+          icon: const Icon(Icons.campaign_rounded),
+          label: const Text('إرسال إعلان لجميع المستخدمين'),
+        ),
+        const SizedBox(height: 16),
         const AdminUpdateManagementPanel(),
         const SizedBox(height: 16),
         Panel(
@@ -239,6 +252,8 @@ class _AdminDashboardPageState extends State<AdminDashboardPage> {
                         try {
                           if (action == 'message') {
                             await _messageUser(u);
+                          } else if (action == 'set_level') {
+                            await _setPlayerLevel(u);
                           } else if (action == 'block') {
                             await CloudService.blockUser('${u['id']}', reason: 'حظر من المالك');
                           } else if (action == 'unblock') {
@@ -251,6 +266,7 @@ class _AdminDashboardPageState extends State<AdminDashboardPage> {
                       },
                       itemBuilder: (_) => const [
                         PopupMenuItem(value: 'message', child: Text('إرسال رسالة')),
+                        PopupMenuItem(value: 'set_level', child: Text('تعديل مستوى اللعبة')),
                         PopupMenuItem(value: 'block', child: Text('حظر المستخدم')),
                         PopupMenuItem(value: 'unblock', child: Text('إلغاء الحظر')),
                       ],
@@ -303,6 +319,158 @@ class _AdminDashboardPageState extends State<AdminDashboardPage> {
         );
       },
     );
+  }
+
+  Widget _gameControl() {
+    final enabled = control['game_enabled'] != false;
+    final messageController = TextEditingController(
+      text: control['maintenance_message']?.toString() ?? '',
+    );
+    return ListView(
+      padding: const EdgeInsets.fromLTRB(16, 14, 16, 28),
+      children: [
+        Panel(
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              const Text('التحكم العام في اللعبة', style: TextStyle(fontSize: 17, fontWeight: FontWeight.w900)),
+              SwitchListTile(
+                contentPadding: EdgeInsets.zero,
+                title: Text(enabled ? 'اللعبة متاحة للجميع' : 'اللعبة متوقفة للجميع'),
+                subtitle: const Text('عند الإيقاف لن يتمكن اللاعبون من بدء أسئلة جديدة.'),
+                value: enabled,
+                onChanged: (value) async {
+                  try {
+                    await GameCloudService.ownerSetGameEnabled(value, message: messageController.text.trim());
+                    if (!mounted) return;
+                    setState(() => control = {...control, 'game_enabled': value, 'maintenance_message': messageController.text.trim()});
+                    ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text(value ? 'تم تشغيل اللعبة.' : 'تم إيقاف اللعبة.')));
+                  } catch (_) {
+                    if (mounted) ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('تعذر تحديث حالة اللعبة.')));
+                  }
+                },
+              ),
+              TextField(
+                controller: messageController,
+                maxLines: 3,
+                decoration: const InputDecoration(labelText: 'رسالة تظهر عند توقف اللعبة'),
+              ),
+              const SizedBox(height: 10),
+              OutlinedButton.icon(
+                onPressed: () async {
+                  try {
+                    await GameCloudService.ownerSetGameEnabled(enabled, message: messageController.text.trim());
+                    if (mounted) {
+                      setState(() => control = {...control, 'maintenance_message': messageController.text.trim()});
+                      ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('تم حفظ رسالة الصيانة.')));
+                    }
+                  } catch (_) {
+                    if (mounted) ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('تعذر حفظ الرسالة.')));
+                  }
+                },
+                icon: const Icon(Icons.save_rounded),
+                label: const Text('حفظ رسالة التوقف'),
+              ),
+            ],
+          ),
+        ),
+        const SizedBox(height: 16),
+        Text('اللاعبون ومستوياتهم (${players.length})', style: const TextStyle(fontSize: 17, fontWeight: FontWeight.w900)),
+        const SizedBox(height: 8),
+        for (final player in players)
+          Padding(
+            padding: const EdgeInsets.only(bottom: 8),
+            child: Panel(
+              child: ListTile(
+                leading: const Icon(Icons.sports_esports_rounded),
+                title: Text('${player['display_name'] ?? player['email'] ?? player['user_id']}'),
+                subtitle: Text('المستوى الحالي: ${player['level'] ?? 1} • أعلى مستوى وصل إليه: ${player['highest_level'] ?? player['level'] ?? 1}'),
+                trailing: IconButton(
+                  tooltip: 'تعديل المستوى',
+                  icon: const Icon(Icons.edit_rounded),
+                  onPressed: () => _setPlayerLevel(player),
+                ),
+              ),
+            ),
+          ),
+      ],
+    );
+  }
+
+  Future<void> _setPlayerLevel(Map<String, dynamic> player) async {
+    final current = (player['level'] as num?)?.toInt() ?? 1;
+    final highest = (player['highest_level'] as num?)?.toInt() ?? current;
+    final controller = TextEditingController(text: current.toString());
+    final selected = await showDialog<int>(
+      context: context,
+      builder: (_) => AlertDialog(
+        title: const Text('تعديل مستوى اللاعب'),
+        content: Column(
+          mainAxisSize: MainAxisSize.min,
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Text('أعلى مستوى مسموح: $highest'),
+            const SizedBox(height: 10),
+            TextField(
+              controller: controller,
+              keyboardType: TextInputType.number,
+              decoration: const InputDecoration(labelText: 'المستوى الجديد (1 إلى أعلى مستوى وصل إليه)'),
+            ),
+          ],
+        ),
+        actions: [
+          TextButton(onPressed: () => Navigator.pop(context), child: const Text('إلغاء')),
+          FilledButton(
+            onPressed: () {
+              final value = int.tryParse(controller.text.trim());
+              if (value != null && value >= 1 && value <= highest) Navigator.pop(context, value);
+            },
+            child: const Text('حفظ'),
+          ),
+        ],
+      ),
+    );
+    controller.dispose();
+    if (selected == null) return;
+    try {
+      await GameCloudService.ownerSetPlayerLevel(
+        userId: '${player['user_id'] ?? player['id']}',
+        level: selected,
+      );
+      await _load();
+      if (mounted) ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text('تم ضبط اللاعب على المستوى $selected.')));
+    } catch (_) {
+      if (mounted) ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('تعذر تعديل المستوى. تأكد أن اللاعب لديه تقدم محفوظ وألا يتجاوز أعلى مستوى وصل إليه.')));
+    }
+  }
+
+  Future<void> _broadcastMessage() async {
+    final title = TextEditingController(text: 'إعلان من سَكِينَة');
+    final body = TextEditingController();
+    final ok = await showDialog<bool>(
+      context: context,
+      builder: (_) => AlertDialog(
+        title: const Text('إرسال إعلان لجميع المستخدمين'),
+        content: Column(mainAxisSize: MainAxisSize.min, children: [
+          TextField(controller: title, decoration: const InputDecoration(labelText: 'العنوان')),
+          TextField(controller: body, maxLines: 5, decoration: const InputDecoration(labelText: 'نص الإعلان')),
+        ]),
+        actions: [
+          TextButton(onPressed: () => Navigator.pop(context, false), child: const Text('إلغاء')),
+          FilledButton(onPressed: () => Navigator.pop(context, true), child: const Text('إرسال')),
+        ],
+      ),
+    );
+    if (ok == true && body.text.trim().isNotEmpty) {
+      try {
+        await CloudService.broadcastMessage(title: title.text.trim(), body: body.text.trim());
+        if (mounted) ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('تم حفظ الإعلان في رسائل المستخدمين.')));
+      } catch (_) {
+        if (mounted) ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('تعذر إرسال الإعلان.')));
+      }
+    }
+    title.dispose();
+    body.dispose();
   }
 
   Future<void> _messageUser(Map<String, dynamic> user) async {
