@@ -28,10 +28,10 @@
       <h1>سكينة <span>SAKINA</span></h1>
       <p class="lead">رفيقك اليومي للقرآن الكريم، والأذكار، ومواقيت الصلاة. تجربة إيمانية بسيطة تجمع ما تحتاجه في مكان واحد.</p>
       <div class="actions">
-        <a class="btn primary" href="https://github.com/mohamedhosney415-creator/SAKINA-CLOUD/releases/download/v4.9.0-17-build-240/app-release.apk">تحميل أحدث إصدار للأندرويد</a>
+        <a class="btn primary" id="download-apk" href="https://github.com/mohamedhosney415-creator/SAKINA-CLOUD/releases/download/v4.9.0-17-build-240/app-release.apk">تحميل أحدث إصدار للأندرويد</a>
         <a class="btn secondary" href="https://github.com/mohamedhosney415-creator/SAKINA-CLOUD/releases">كل الإصدارات</a>
       </div>
-      <div class="version">الإصدار v4.9.0-17-build-240 · Android APK · حوالي 76.6 MB</div>
+      <div class="version" id="latest-version">الإصدار v4.9.0+17 · Android APK · حوالي 76.6 MB</div>
       <section class="features" aria-label="مميزات التطبيق">
         <article class="feature"><b>القرآن الكريم</b><p>قراءة واستماع ومتابعة وردك اليومي.</p></article>
         <article class="feature"><b>الصلاة والأذكار</b><p>مواقيت الصلاة والتنبيهات والأذكار اليومية.</p></article>
@@ -41,5 +41,22 @@
     </main>
     <footer>© SAKINA · جميع الحقوق محفوظة</footer>
   </div>
+
+  <script>
+    (async function () {
+      try {
+        const response = await fetch('https://raw.githubusercontent.com/mohamedhosney415-creator/SAKINA-CLOUD/main/update.json', { cache: 'no-store' });
+        if (!response.ok) return;
+        const release = await response.json();
+        const download = document.getElementById('download-apk');
+        const version = document.getElementById('latest-version');
+        if (download && release.apkUrl) download.href = release.apkUrl;
+        if (version && release.latestVersion) {
+          version.textContent = 'الإصدار v' + release.latestVersion + '+' + (release.latestBuildNumber || 0) + ' · Android APK';
+        }
+      } catch (_) {}
+    })();
+  </script>
+
 </body>
 </html>
