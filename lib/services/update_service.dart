@@ -37,7 +37,9 @@ class UpdateService {
       final data = jsonDecode(response.body) as Map<String, dynamic>;
       final version = data['latestVersion']?.toString() ?? '';
       final apkUrl = data['apkUrl']?.toString() ?? '';
-      if (version.isEmpty || Uri.tryParse(apkUrl)?.hasAbsolutePath != true) {
+      final parsedApkUrl = Uri.tryParse(apkUrl);
+      if (version.isEmpty || parsedApkUrl == null ||
+          parsedApkUrl.scheme != 'https' || parsedApkUrl.host.isEmpty) {
         return null;
       }
       return SakinaUpdateInfo(
