@@ -53,13 +53,15 @@ void main() {
   });
 
   test(
-    'ten correct unique answers complete a perfect level exactly once',
+    'the configured number of correct unique answers completes a perfect level once',
     () async {
-      final levelQuestions = quranGameBank.where((q) => q.level == 1);
+      final requiredAnswers = QuranGameConfig.questionsPerLevelFor(1);
+      final levelQuestions =
+          quranGameBank.where((q) => q.level == 1).take(requiredAnswers);
       for (final q in levelQuestions) {
         await QuranGameService.answer(q, true);
       }
-      expect(QuranGameService.questionsAnsweredInCurrentLevel, 10);
+      expect(QuranGameService.questionsAnsweredInCurrentLevel, requiredAnswers);
       expect(await QuranGameService.completeLevelIfReady(), isTrue);
       expect(QuranGameService.level, 2);
       expect(QuranGameService.perfectLevels, 1);
