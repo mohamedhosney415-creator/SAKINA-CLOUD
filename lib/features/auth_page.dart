@@ -46,9 +46,11 @@ class _AuthPageState extends State<AuthPage> {
       await QuranGameService.loadRemoteQuestions();
       if (mounted) await UpdateService.showIfNeeded(context);
       if (mounted) Navigator.of(context).pop();
-    } catch (_) {
+    } catch (e) {
       finishing = false;
-      if (mounted) setState(() => error = 'تم تسجيل الدخول لكن تعذرت مزامنة البيانات.');
+      if (mounted) {
+        setState(() => error = 'تم تسجيل الدخول لكن تعذرت مزامنة البيانات: $e');
+      }
     }
   }
 
@@ -59,7 +61,10 @@ class _AuthPageState extends State<AuthPage> {
       await _completeLogin();
     } on AuthException catch (e) {
       if (mounted) {
-        setState(() => error = 'تعذر الدخول كضيف: ${e.message}');
+        final details = e.message.toLowerCase().contains('anonymous')
+            ? 'الدخول كضيف غير مفعّل على الخادم. يجب تفعيل Anonymous Sign-ins في Supabase Auth.'
+            : 'تعذر الدخول كضيف: ${e.message}';
+        setState(() => error = details);
       }
     } catch (e) {
       if (mounted) {

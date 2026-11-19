@@ -14,6 +14,7 @@ import 'noor_service.dart';
 import 'activity_service.dart';
 import 'package:flutter/material.dart';
 import '../features/adhan_experience_page.dart';
+import '../features/messages_page.dart';
 
 final FlutterLocalNotificationsPlugin notificationsPlugin =
     FlutterLocalNotificationsPlugin();
@@ -175,6 +176,10 @@ class NotificationService {
           sakinaNavigatorKey.currentState?.push(MaterialPageRoute(
             builder: (_) => AdhanExperiencePage(prayerKey: prayerKey),
           ));
+        } else if (payload.startsWith('message:')) {
+          sakinaNavigatorKey.currentState?.push(MaterialPageRoute(
+            builder: (_) => const MessagesPage(),
+          ));
         }
       },
     );
@@ -297,6 +302,36 @@ class NotificationService {
           styleInformation: BigTextStyleInformation(body),
         ),
       );
+
+  static NotificationDetails _announcementDetails(String body) =>
+      NotificationDetails(
+        android: AndroidNotificationDetails(
+          'sakina_announcements_v1',
+          'إعلانات سكينة',
+          channelDescription: 'إعلانات المالك والتنبيهات العامة',
+          importance: Importance.high,
+          priority: Priority.high,
+          autoCancel: true,
+          timeoutAfter: 12000,
+          styleInformation: BigTextStyleInformation(body),
+        ),
+      );
+
+  static Future<bool> showOwnerAnnouncement({
+    required String title,
+    required String body,
+    required String messageId,
+  }) async {
+    if (!ready || !await notificationsAllowed()) return false;
+    await notificationsPlugin.show(
+      7001,
+      title,
+      body,
+      _announcementDetails(body),
+      payload: 'message:$messageId',
+    );
+    return true;
+  }
 
   static NotificationDetails _dailyMessageDetails(String body) =>
       NotificationDetails(
